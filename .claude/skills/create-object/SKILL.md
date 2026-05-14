@@ -1,6 +1,6 @@
 ---
 name: create-object
-description: Creates a new 3D parametric object in Threeforge. Copies the viewer template, customizes geometry/params/OBJECT_NAME/sliders, and registers the card in index.html. Use whenever the user asks to create, add, or build a new 3D object.
+description: Creates a new 3D parametric object in Threeforge. Copies the viewer template, customizes geometry/params/OBJECT_NAME/sliders, and registers the card in index.html. Trigger whenever the user asks to create, add, or build a new 3D object — including Portuguese requests like "quero uma esfera geodésica", "adiciona um cubo", "faz um objeto novo", "cria um viewer pra X". If the user describes any 3D shape, geometry, or parametric concept they want to visualize, this is the skill to use.
 ---
 
 # create-object
@@ -47,6 +47,27 @@ Antes de criar qualquer arquivo:
    - Se existir: informe o usuário e pergunte se quer sobrescrever ou usar outro nome.
 2. Verifique se `OBJECT_NAME = '<nome>'` já aparece em outro arquivo em `src/objetos/`.
    - Se houver conflito de nome de export: avise o usuário (colisão silenciosa em `~/Downloads`).
+
+---
+
+## Skills de referência
+
+Antes de implementar, consulte a skill especializada correspondente ao que o objeto exige:
+
+| Necessidade | Skill |
+|---|---|
+| Geometria nativa (Box, Sphere, Torus, etc.) ou BufferGeometry customizada | **`threejs-geometry`** |
+| Material além do padrão (MeshPhysical, MeshToon, dois lados, wireframe, blending) | **`threejs-materials`** |
+| Efeitos visuais via GLSL (vertex distortion, fragment gradients, noise) | **`threejs-shaders`** |
+| Animação procedural no loop ou baseada em clock | **`threejs-animation`** |
+| Texturas, mapas UV, cubemaps ou ambientes HDR | **`threejs-textures`** |
+| Iluminação além do padrão Ambient + Dir + Fill | **`threejs-lighting`** |
+| Bloom, DOF ou outros efeitos de pós-processamento | **`threejs-postprocessing`** |
+| Carregamento de modelos externos (GLB, OBJ) ou assets | **`threejs-loaders`** |
+| Interação customizada além do OrbitControls (raycasting, drag) | **`threejs-interaction`** |
+| Dúvidas sobre cena, câmera, renderer ou hierarquia de objetos | **`threejs-fundamentals`** |
+
+> Todo objeto novo usa pelo menos **`threejs-geometry`** e **`threejs-materials`**. Consulte as demais conforme as features planejadas no brainstorming.
 
 ---
 
@@ -104,8 +125,6 @@ function buildGeometry() {
   updateInfo();
 }
 ```
-
-> **Nunca omita** `geometry.dispose()` + `scene.remove(mesh)` — é a regra mais crítica do projeto (vaza memória GPU em sliders rápidos).
 
 ### 3.5 — Sliders no HTML
 
@@ -193,12 +212,12 @@ Se houver qualquer desvio das convenções (ex: parâmetro sem slider, offset Y 
 
 ## Regras Gerais
 
-**Nunca crie o arquivo fora de `src/objetos/`** — quebra a expectativa do `index.html`.
+**Salve o arquivo em `src/objetos/`**: o `index.html` aponta para esse diretório por convenção — arquivos em outro lugar não aparecem na galeria e confundem quem abre o projeto depois.
 
-**Nunca esqueça de registrar em `index.html`** — o arquivo funciona standalone mas não aparece na galeria.
+**Registre sempre em `index.html`**: o arquivo funciona standalone ao abrir diretamente no navegador, mas sem a entrada no array `OBJECTS` o card não aparece para ninguém que usa a galeria.
 
-**Nunca omita o dispose** — `geometry.dispose()` + `scene.remove(mesh)` em todo rebuild.
+**Preserve o dispose em todo rebuild**: `geometry.dispose()` + `scene.remove(mesh)` antes de criar nova geometria evita vazamento de memória GPU — em sliders rápidos o browser pode travar sem isso.
 
-**Paleta e fonte são fixas** — não altere as cores ou a fonte no CSS do objeto criado. O CSS vem do template e deve ser mantido idêntico.
+**Mantenha a paleta e a fonte do template**: o CSS do template define a identidade visual do workspace — mudar cores ou fonte num objeto individual quebra a coesão da galeria inteira.
 
-**Idioma** — use o mesmo idioma da conversa com o usuário.
+**Idioma**: use o mesmo idioma da conversa com o usuário.
