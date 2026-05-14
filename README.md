@@ -2,80 +2,112 @@
 
 ![Threeforge preview](assets/image1.png)
 
-Workspace para criação e exportação de objetos 3D parametrizados com [Three.js](https://threejs.org/). Cada objeto é um arquivo HTML standalone — sem build, sem dependências locais. Abra o `index.html` no navegador e acesse qualquer objeto com um clique.
+Workspace for creating and exporting parametric 3D objects with [Three.js](https://threejs.org/). Each object is a standalone HTML file — no build step, no local dependencies. Open `index.html` in your browser and access any object in one click.
 
 ---
 
-## Como funciona
+## How it works
 
-1. `index.html` na raiz é a galeria — lista todos os objetos cadastrados
-2. Cada objeto vive em `src/objetos/<nome>.html`, autossuficiente (HTML + CSS + JS inline)
-3. Ao abrir um objeto, você tem um viewer 3D interativo com sliders de parâmetros e botões de exportação
+1. `index.html` at the root is the gallery — it lists all registered objects
+2. Each object lives in `src/objetos/<name>.html`, fully self-contained (HTML + CSS + JS inline)
+3. Opening an object gives you an interactive 3D viewer with parameter sliders and export buttons
 
-O viewer de cada objeto:
-- Renderiza a geometria com Three.js (WebGL)
-- Expõe sliders ligados ao objeto `PARAMS` — alterar um slider chama `buildGeometry()` e reconstrói a malha em tempo real
-- Permite exportar nos formatos GLB, OBJ, STL e PNG sem nenhum servidor
-
----
-
-## Como criar um novo objeto
-
-Use a skill `/create-object <nome>` no Claude Code. Ela executa o fluxo completo:
-
-1. Copia `src/_template/viewer-template.html` para `src/objetos/<nome>.html`
-2. Customiza a geometria, os `PARAMS` e os sliders
-3. Registra o card no array `OBJECTS` do `index.html`
-
-> Antes de criar, invoque `/brainstorming` — é obrigatório para alinhar o design do objeto antes de implementar.
+Each viewer:
+- Renders geometry with Three.js (WebGL)
+- Exposes sliders bound to the `PARAMS` object — changing a slider calls `buildGeometry()` and rebuilds the mesh in real time
+- Lets you export in GLB, OBJ, STL, and PNG formats with no server required
 
 ---
 
-## Fluxo resumido
+## Getting started
+
+### Option 1 — Open directly (simplest)
+
+1. Clone or download this repository
+2. Double-click `index.html` — it will open in your default browser
+3. Click any object card to open its viewer
+4. Use the sliders to adjust parameters and hit an export button to download the file
+
+> Some browsers restrict local file access (`file://`). If the viewer loads blank, use Option 2.
+
+### Option 2 — Local static server (recommended)
+
+If you have Python installed:
+
+```bash
+# Python 3
+python -m http.server 8080
+```
+
+Then open `http://localhost:8080` in your browser.
+
+Or with Node.js:
+
+```bash
+npx serve .
+```
+
+Then open the URL shown in the terminal.
+
+---
+
+## Creating a new object
+
+Use the `/create-object <name>` skill in Claude Code. It runs the full flow:
+
+1. Copies `src/_template/viewer-template.html` to `src/objetos/<name>.html`
+2. Customizes the geometry, `PARAMS`, and sliders
+3. Registers the card in the `OBJECTS` array inside `index.html`
+
+> Run `/brainstorming` first — it's required to align the object design before implementation.
+
+---
+
+## Flow overview
 
 ```
-index.html (galeria)
-  └── src/objetos/<nome>.html (viewer standalone)
-        ├── PARAMS          → valores dos sliders
-        ├── buildGeometry() → reconstrói a malha a cada mudança
+index.html (gallery)
+  └── src/objetos/<name>.html (standalone viewer)
+        ├── PARAMS          → slider values
+        ├── buildGeometry() → rebuilds mesh on every change
         └── export buttons  → GLB / OBJ / STL / PNG
 ```
 
 ---
 
-## Formatos de exportação
+## Export formats
 
-| Formato | Uso |
-|---------|-----|
-| `.glb`  | Game engines, Blender, AR/VR |
-| `.obj`  | CAD, impressão 3D, compatibilidade ampla |
-| `.stl`  | Impressão 3D (fatiadores como Cura, PrusaSlicer) |
-| `.png`  | Preview, portfólio, documentação |
+| Format | Use case |
+|--------|----------|
+| `.glb` | Game engines, Blender, AR/VR |
+| `.obj` | CAD, 3D printing, broad compatibility |
+| `.stl` | 3D printing (slicers like Cura, PrusaSlicer) |
+| `.png` | Preview, portfolio, documentation |
 
 ---
 
-## Estrutura de arquivos
+## File structure
 
 ```
 .
-├── index.html                        ← galeria
+├── index.html                        ← gallery
 ├── src/
 │   ├── _template/
-│   │   └── viewer-template.html      ← base para novos objetos (não editar; copiar)
+│   │   └── viewer-template.html      ← base for new objects (copy, don't edit)
 │   └── objetos/
 │       ├── cubo.html
 │       └── bolha-de-sabao.html
-├── assets/                           ← imagens e recursos estáticos
-├── flow/                             ← documentação de fluxos
-└── exports/                          ← convenção para arquivos exportados
+├── assets/                           ← static images and resources
+├── flow/                             ← flow documentation
+└── exports/                          ← convention for exported files
 ```
 
 ---
 
 ## Stack
 
-- **Three.js r160** via CDN (importmap) — sem bundler
-- **OrbitControls** — navegação 3D
-- **GLTFExporter / OBJExporter / STLExporter** — exportação
-- CSS e JS inline em cada HTML — zero arquivos externos
-- Fonte: `DM Mono`, paleta dark minimalista estilo Apple
+- **Three.js r160** via CDN (importmap) — no bundler
+- **OrbitControls** — 3D navigation
+- **GLTFExporter / OBJExporter / STLExporter** — export pipeline
+- CSS and JS inline in each HTML — zero external files
+- Font: `DM Mono`, Apple-inspired dark minimal palette
