@@ -23,6 +23,8 @@ Workspace estático de objetos 3D parametrizados em Three.js: cada objeto é um 
 
 Não há scripts. Para validar mudanças: abrir `index.html` no navegador (ou um servidor estático local) e clicar no objeto.
 
+- **`/create-object <nome>`** — skill que executa o fluxo completo de criação: copia template → customiza geometria/params/sliders → registra na galeria. Sempre invocar após o `brainstorming`.
+
 ## Convenções
 
 - **Salvar objetos em `src/objetos/<nome-kebab>.html`** — `index.html` lista a partir do array `OBJECTS`; não há auto-discovery
