@@ -21,7 +21,7 @@ Each viewer:
 
 ## Getting started
 
-### Option 1 — Open directly (simplest)
+### Open directly (simplest)
 
 1. Clone or download this repository
 2. Double-click `index.html` — it will open in your default browser
@@ -30,26 +30,6 @@ Each viewer:
 
 > Some browsers restrict local file access (`file://`). If the viewer loads blank, use Option 2.
 
-### Option 2 — Local static server (recommended)
-
-If you have Python installed:
-
-```bash
-# Python 3
-python -m http.server 8080
-```
-
-Then open `http://localhost:8080` in your browser.
-
-Or with Node.js:
-
-```bash
-npx serve .
-```
-
-Then open the URL shown in the terminal.
-
----
 
 ## Creating a new object
 
