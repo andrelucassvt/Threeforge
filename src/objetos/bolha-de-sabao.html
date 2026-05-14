@@ -1,0 +1,644 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Bolha de Sabão — ThreeJS Viewer</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&display=swap" rel="stylesheet" />
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: #0a0a0a;
+    color: #f0f0f0;
+    font-family: 'DM Mono', monospace;
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+    overflow: hidden;
+  }
+
+  /* ── HEADER ── */
+  header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 24px;
+    background: #111113;
+    border-bottom: 1px solid rgba(255,255,255,0.07);
+    flex-shrink: 0;
+  }
+  header h1 { font-size: 13px; color: #f0f0f0; letter-spacing: 0.06em; font-weight: 500; }
+  header .actions { display: flex; gap: 8px; }
+  header button {
+    background: rgba(255,255,255,0.06);
+    border: 1px solid rgba(255,255,255,0.1);
+    color: #6e6e73;
+    padding: 5px 14px;
+    font-family: inherit;
+    font-size: 11px;
+    cursor: pointer;
+    border-radius: 8px;
+    transition: all 0.2s;
+  }
+  header button:hover {
+    background: rgba(255,255,255,0.1);
+    color: #f0f0f0;
+    border-color: rgba(255,255,255,0.2);
+  }
+
+  /* ── MAIN LAYOUT ── */
+  main {
+    display: flex;
+    flex: 1;
+    overflow: hidden;
+  }
+
+  /* ── VIEWER ── */
+  #viewer {
+    flex: 1;
+    position: relative;
+    background: #111113;
+  }
+  #viewer canvas {
+    display: block;
+    width: 100% !important;
+    height: 100% !important;
+  }
+  #viewer-hint {
+    position: absolute;
+    bottom: 16px;
+    left: 50%;
+    transform: translateX(-50%);
+    font-size: 10px;
+    color: #3d3d40;
+    pointer-events: none;
+    white-space: nowrap;
+  }
+
+  /* ── PANEL ── */
+  aside {
+    width: 272px;
+    flex-shrink: 0;
+    background: #111113;
+    border-left: 1px solid rgba(255,255,255,0.07);
+    display: flex;
+    flex-direction: column;
+    overflow-y: auto;
+  }
+
+  .section {
+    padding: 20px 18px;
+    border-bottom: 1px solid rgba(255,255,255,0.05);
+  }
+  .section-title {
+    font-size: 8px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: #3d3d40;
+    margin-bottom: 16px;
+  }
+
+  /* sliders */
+  .param-row { margin-bottom: 16px; }
+  .param-label {
+    display: flex;
+    justify-content: space-between;
+    font-size: 11px;
+    color: #6e6e73;
+    margin-bottom: 7px;
+  }
+  .param-label span { color: #f0f0f0; }
+  input[type="range"] {
+    width: 100%;
+    accent-color: #00ff88;
+    cursor: pointer;
+  }
+
+  /* select */
+  .param-select {
+    width: 100%;
+    background: rgba(255,255,255,0.05);
+    border: 1px solid rgba(255,255,255,0.1);
+    color: #f0f0f0;
+    font-family: inherit;
+    font-size: 11px;
+    padding: 7px 10px;
+    border-radius: 8px;
+    cursor: pointer;
+    margin-top: 4px;
+  }
+
+  /* color */
+  .color-row { display: flex; align-items: center; gap: 10px; font-size: 11px; color: #6e6e73; }
+  input[type="color"] { width: 36px; height: 26px; border: none; background: none; cursor: pointer; border-radius: 4px; }
+
+  /* export buttons */
+  .export-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+  }
+  .btn-export {
+    background: rgba(255,255,255,0.05);
+    border: 1px solid rgba(255,255,255,0.1);
+    color: #6e6e73;
+    font-family: inherit;
+    font-size: 11px;
+    padding: 9px 4px;
+    border-radius: 8px;
+    cursor: pointer;
+    text-align: center;
+    transition: all 0.2s;
+  }
+  .btn-export:hover {
+    background: rgba(255,255,255,0.09);
+    color: #f0f0f0;
+    border-color: rgba(255,255,255,0.18);
+  }
+  .btn-export.primary {
+    grid-column: span 2;
+    border-color: rgba(0,255,136,0.3);
+    color: #00ff88;
+    background: rgba(0,255,136,0.05);
+  }
+  .btn-export.primary:hover {
+    background: rgba(0,255,136,0.1);
+    border-color: rgba(0,255,136,0.5);
+  }
+
+  /* info */
+  .info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  .info-item { font-size: 10px; color: #3d3d40; }
+  .info-item strong { display: block; color: #6e6e73; font-size: 11px; margin-bottom: 2px; }
+</style>
+
+<!-- Three.js via importmap -->
+<script type="importmap">
+{
+  "imports": {
+    "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+    "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
+  }
+}
+</script>
+</head>
+<body>
+
+<header>
+  <h1>BOLHA DE SABÃO</h1>
+  <div class="actions">
+    <button onclick="resetParams()">↺ Reset</button>
+    <button onclick="toggleWireframe()">⬡ Wire</button>
+  </div>
+</header>
+
+<main>
+  <!-- ── VIEWER ── -->
+  <div id="viewer">
+    <canvas id="c"></canvas>
+    <div id="viewer-hint">Clique e arraste para orbitar · Scroll para zoom · Botão do meio para pan</div>
+  </div>
+
+  <!-- ── PANEL ── -->
+  <aside>
+
+    <!-- PARÂMETROS -->
+    <div class="section">
+      <div class="section-title">Parâmetros</div>
+
+      <div class="param-row">
+        <div class="param-label">Raio <span id="val-radius">1.00</span></div>
+        <input type="range" id="sl-radius" min="0.3" max="2" step="0.05" value="1"
+               oninput="updateParam('radius', this.value)" />
+      </div>
+
+      <div class="param-row">
+        <div class="param-label">Achatamento <span id="val-squishY">0.98</span></div>
+        <input type="range" id="sl-squishY" min="0.5" max="1.3" step="0.05" value="0.98"
+               oninput="updateParam('squishY', this.value)" />
+      </div>
+
+      <div class="param-row">
+        <div class="param-label">Tamanho dos olhos <span id="val-eyeSize">0.18</span></div>
+        <input type="range" id="sl-eyeSize" min="0.05" max="0.25" step="0.01" value="0.18"
+               oninput="updateParam('eyeSize', this.value)" />
+      </div>
+    </div>
+
+    <!-- MATERIAL -->
+    <div class="section">
+      <div class="section-title">Material</div>
+
+      <div class="param-row">
+        <div class="color-row">
+          Cor base
+          <input type="color" id="cl-color" value="#eafcff" oninput="updateColor(this.value)" />
+        </div>
+      </div>
+
+      <div class="param-row">
+        <div class="param-label">Iridescência <span id="val-iridescence">0.90</span></div>
+        <input type="range" id="sl-iridescence" min="0" max="1" step="0.05" value="0.9"
+               oninput="updateMaterial('iridescence', this.value)" />
+      </div>
+
+      <div class="param-row">
+        <div class="param-label">Rugosidade <span id="val-roughness">0.02</span></div>
+        <input type="range" id="sl-roughness" min="0" max="1" step="0.01" value="0.02"
+               oninput="updateMaterial('roughness', this.value)" />
+      </div>
+
+      <div class="param-row">
+        <div class="param-label">Metalicidade <span id="val-metalness">0.00</span></div>
+        <input type="range" id="sl-metalness" min="0" max="1" step="0.01" value="0"
+               oninput="updateMaterial('metalness', this.value)" />
+      </div>
+    </div>
+
+    <!-- CENA -->
+    <div class="section">
+      <div class="section-title">Cena</div>
+
+      <div class="param-row">
+        <div class="param-label">Fundo</div>
+        <select class="param-select" onchange="setBackground(this.value)">
+          <option value="#1a1a1a">Escuro (padrão)</option>
+          <option value="#ffffff">Branco</option>
+          <option value="#0a0a1a">Azul noite</option>
+          <option value="transparent">Transparente</option>
+        </select>
+      </div>
+    </div>
+
+    <!-- EXPORTAR -->
+    <div class="section">
+      <div class="section-title">Exportar</div>
+      <div class="export-grid">
+        <button class="btn-export primary" onclick="exportGLB()">↓ GLB</button>
+        <button class="btn-export" onclick="exportOBJ()">↓ OBJ</button>
+        <button class="btn-export" onclick="exportSTL()">↓ STL</button>
+        <button class="btn-export" onclick="exportPNG(1)">↓ PNG 1×</button>
+        <button class="btn-export" onclick="exportPNG(2)">↓ PNG 2×</button>
+        <button class="btn-export" onclick="exportPNG(4)">↓ PNG 4×</button>
+      </div>
+    </div>
+
+    <!-- INFO -->
+    <div class="section">
+      <div class="section-title">Info</div>
+      <div class="info-grid">
+        <div class="info-item"><strong id="info-verts">—</strong>vértices</div>
+        <div class="info-item"><strong id="info-tris">—</strong>triângulos</div>
+      </div>
+    </div>
+
+  </aside>
+</main>
+
+<script type="module">
+import * as THREE from 'three';
+import { OrbitControls }  from 'three/addons/controls/OrbitControls.js';
+import { GLTFExporter }   from 'three/addons/exporters/GLTFExporter.js';
+import { OBJExporter }    from 'three/addons/exporters/OBJExporter.js';
+import { STLExporter }    from 'three/addons/exporters/STLExporter.js';
+import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
+
+// ─────────────────────────────────────────────
+// PARÂMETROS
+// ─────────────────────────────────────────────
+const PARAMS = {
+  radius:      1.0,
+  squishY:     0.98,
+  eyeSize:     0.18,
+  iridescence: 0.9,
+  roughness:   0.02,
+  metalness:   0.0,
+  color:       0xeafcff,
+};
+
+// ─────────────────────────────────────────────
+// SCENE SETUP
+// ─────────────────────────────────────────────
+const canvas   = document.getElementById('c');
+const renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
+renderer.setPixelRatio(window.devicePixelRatio);
+renderer.shadowMap.enabled = true;
+renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+renderer.setClearColor(0x1a1a1a);
+
+const scene  = new THREE.Scene();
+const camera = new THREE.PerspectiveCamera(45, 1, 0.01, 1000);
+camera.position.set(0, 1.35, 5.4);
+
+const controls = new OrbitControls(camera, renderer.domElement);
+controls.enableDamping = true;
+controls.dampingFactor = 0.06;
+controls.target.set(0, 0.95, 0);
+controls.update();
+
+// Ambiente para iridescência
+const pmremGenerator = new THREE.PMREMGenerator(renderer);
+scene.environment = pmremGenerator.fromScene(new RoomEnvironment(), 0.04).texture;
+pmremGenerator.dispose();
+
+// Iluminação
+const ambient = new THREE.AmbientLight(0xffffff, 0.4);
+scene.add(ambient);
+
+const dirLight = new THREE.DirectionalLight(0xffffff, 1.2);
+dirLight.position.set(5, 10, 7);
+dirLight.castShadow = true;
+dirLight.shadow.mapSize.set(2048, 2048);
+scene.add(dirLight);
+
+const fill = new THREE.DirectionalLight(0x8888ff, 0.3);
+fill.position.set(-5, -2, -5);
+scene.add(fill);
+
+// Grid
+const grid = new THREE.GridHelper(20, 20, 0x333333, 0x222222);
+scene.add(grid);
+
+// Plano de sombra
+const shadowPlane = new THREE.Mesh(
+  new THREE.PlaneGeometry(40, 40),
+  new THREE.ShadowMaterial({ opacity: 0.25 })
+);
+shadowPlane.rotation.x = -Math.PI / 2;
+shadowPlane.receiveShadow = true;
+scene.add(shadowPlane);
+
+// ─────────────────────────────────────────────
+// OBJETO
+// ─────────────────────────────────────────────
+let mesh; // THREE.Group com todos os elementos do personagem
+
+const material = new THREE.MeshPhysicalMaterial({
+  color:                    PARAMS.color,
+  roughness:                PARAMS.roughness,
+  metalness:                PARAMS.metalness,
+  transparent:              true,
+  opacity:                  0.58,
+  depthWrite:               false,
+  side:                     THREE.DoubleSide,
+  iridescence:              PARAMS.iridescence,
+  iridescenceIOR:           2.0,
+  iridescenceThicknessRange: [100, 400],
+});
+
+function buildGeometry() {
+  if (mesh) {
+    mesh.traverse(child => {
+      if (child.isMesh) {
+        child.geometry.dispose();
+        if (child.material !== material) child.material.dispose();
+      }
+    });
+    scene.remove(mesh);
+  }
+
+  const R = PARAMS.radius;
+  const S = PARAMS.squishY;
+  const E = PARAMS.eyeSize;
+
+  const faceZ = (x, y) => Math.sqrt(Math.max(0.001, R * R - x * x - (y / S) * (y / S)));
+  const surfacePoint = (x, y, lift = 1.02) => new THREE.Vector3(x, y, faceZ(x, y) * lift);
+  const surfaceNormal = (x, y, lift = 1) => new THREE.Vector3(x, y / S, faceZ(x, y) * lift).normalize();
+  const yTop = () => -0.08 * R * S;
+  const yBottom = (x) => (-0.70 + 0.21 * Math.pow(x / (0.84 * R), 2)) * R * S;
+
+  const makeSurfaceDisc = (x, y, radius, mat, sx = 1, sy = 1, lift = 1.035, segments = 32) => {
+    const disc = new THREE.Mesh(new THREE.CircleGeometry(radius, segments), mat);
+    disc.position.copy(surfacePoint(x, y, lift));
+    disc.quaternion.setFromUnitVectors(new THREE.Vector3(0, 0, 1), surfaceNormal(x, y, lift));
+    disc.scale.set(sx, sy, 1);
+    disc.renderOrder = 3;
+    return disc;
+  };
+
+  const makeTube = (pts, radius, mat, lift = 1.045) => {
+    const curve = new THREE.CatmullRomCurve3(pts.map(([x, y]) => surfacePoint(x, y, lift)));
+    const tube = new THREE.Mesh(new THREE.TubeGeometry(curve, 16, radius, 7, false), mat);
+    tube.renderOrder = 4;
+    return tube;
+  };
+
+  const group = new THREE.Group();
+
+  // ── Corpo principal ──
+  const bodyGeo = new THREE.SphereGeometry(R, 64, 64);
+  const body = new THREE.Mesh(bodyGeo, material);
+  body.scale.y = S;
+  body.castShadow = true;
+  body.renderOrder = 0;
+  group.add(body);
+
+  // ── Materiais das features ──
+  const eyeMat = new THREE.MeshBasicMaterial({ color: 0x260609, side: THREE.DoubleSide });
+  const mouthFillMat = new THREE.MeshBasicMaterial({ color: 0xfffffb, side: THREE.DoubleSide });
+  const lineMat = new THREE.MeshBasicMaterial({ color: 0x23070b });
+
+  // ── Olhos ──
+  const eyeX = 0.58 * R;
+  const eyeY = 0.39 * R * S;
+  const leftEye = makeSurfaceDisc(-eyeX, eyeY, E * 1.05, eyeMat, 1, 1.1, 1.055);
+  const rightEye = makeSurfaceDisc(eyeX, eyeY, E * 1.05, eyeMat, 1, 1.1, 1.055);
+  group.add(leftEye, rightEye);
+
+  // ── Boca grande com dentes triangulares ──
+  const mouthHalfWidth = 0.82 * R;
+  const x0 = -mouthHalfWidth;
+  const x1 = mouthHalfWidth;
+  const steps = 28;
+  const top = [];
+  const bottom = [];
+  for (let i = 0; i <= steps; i++) {
+    const t = i / steps;
+    const x = THREE.MathUtils.lerp(x0, x1, t);
+    top.push({ x, y: yTop(x) });
+    bottom.push({ x, y: yBottom(x) });
+  }
+
+  const contour = [...top, ...bottom.reverse()];
+  const contour2 = contour.map(p => new THREE.Vector2(p.x, p.y));
+  const triangles = THREE.ShapeUtils.triangulateShape(contour2, []);
+  const mouthGeo = new THREE.BufferGeometry();
+  mouthGeo.setAttribute('position', new THREE.Float32BufferAttribute(
+    contour.flatMap(p => {
+      const v = surfacePoint(p.x, p.y, 1.028);
+      return [v.x, v.y, v.z];
+    }), 3
+  ));
+  mouthGeo.setIndex(triangles.flat());
+  mouthGeo.computeVertexNormals();
+
+  const mouth = new THREE.Mesh(mouthGeo, mouthFillMat);
+  mouth.renderOrder = 2;
+  group.add(mouth);
+
+  const topPts = top.map(p => [p.x, p.y]);
+  const bottomPts = [...bottom].reverse().map(p => [p.x, p.y]);
+  group.add(makeTube(topPts, R * 0.008, lineMat));
+  group.add(makeTube(bottomPts, R * 0.009, lineMat));
+  group.add(makeTube([[x0, yTop(x0)], [x0, yBottom(x0)]], R * 0.008, lineMat));
+  group.add(makeTube([[x1, yTop(x1)], [x1, yBottom(x1)]], R * 0.008, lineMat));
+
+  const toothCount = 6;
+  for (let i = 0; i < toothCount; i++) {
+    const a = i / toothCount;
+    const b = (i + 1) / toothCount;
+    const mid = (a + b) * 0.5;
+    const lx = THREE.MathUtils.lerp(x0, x1, a);
+    const rx = THREE.MathUtils.lerp(x0, x1, b);
+    const tx = THREE.MathUtils.lerp(x0, x1, mid);
+    const tipY = yBottom(tx) + 0.02 * R * S;
+    group.add(makeTube([[lx, yTop(lx)], [tx, tipY], [rx, yTop(rx)]], R * 0.0065, lineMat));
+  }
+
+  // Posiciona o grupo com a base da bolha no grid (y = 0)
+  group.position.y = R * S;
+  mesh = group;
+  scene.add(mesh);
+
+  updateInfo();
+}
+
+function updateInfo() {
+  if (!mesh) return;
+  let verts = 0, tris = 0;
+  mesh.traverse(child => {
+    if (child.isMesh) {
+      const pos = child.geometry.attributes.position;
+      verts += pos.count;
+      tris += child.geometry.index
+        ? child.geometry.index.count / 3
+        : pos.count / 3;
+    }
+  });
+  document.getElementById('info-verts').textContent = verts;
+  document.getElementById('info-tris').textContent = Math.floor(tris);
+}
+
+// ─────────────────────────────────────────────
+// CONTROLES UI
+// ─────────────────────────────────────────────
+window.updateParam = (key, val) => {
+  PARAMS[key] = parseFloat(val);
+  const el = document.getElementById('val-' + key);
+  if (el) el.textContent = parseFloat(val).toFixed(2);
+  buildGeometry();
+};
+
+window.updateMaterial = (key, val) => {
+  PARAMS[key] = parseFloat(val);
+  material[key] = parseFloat(val);
+  material.needsUpdate = true;
+  document.getElementById('val-' + key).textContent = parseFloat(val).toFixed(2);
+};
+
+window.updateColor = (hex) => {
+  PARAMS.color = new THREE.Color(hex).getHex();
+  material.color.set(hex);
+};
+
+window.setBackground = (color) => {
+  if (color === 'transparent') {
+    renderer.setClearAlpha(0);
+    renderer.setClearColor(0x000000, 0);
+  } else {
+    renderer.setClearAlpha(1);
+    renderer.setClearColor(color);
+  }
+};
+
+window.toggleWireframe = () => {
+  material.wireframe = !material.wireframe;
+};
+
+window.resetParams = () => {
+  PARAMS.radius  = 1.0;
+  PARAMS.squishY = 0.98;
+  PARAMS.eyeSize = 0.18;
+  document.getElementById('sl-radius').value  = 1.0;
+  document.getElementById('sl-squishY').value = 0.98;
+  document.getElementById('sl-eyeSize').value = 0.18;
+  document.getElementById('val-radius').textContent  = '1.00';
+  document.getElementById('val-squishY').textContent = '0.98';
+  document.getElementById('val-eyeSize').textContent = '0.18';
+  // Reset iridescência
+  PARAMS.iridescence = 0.9;
+  material.iridescence = 0.9;
+  document.getElementById('sl-iridescence').value = 0.9;
+  document.getElementById('val-iridescence').textContent = '0.90';
+  buildGeometry();
+};
+
+// ─────────────────────────────────────────────
+// EXPORTADORES
+// ─────────────────────────────────────────────
+function downloadBlob(blob, filename) {
+  const url = URL.createObjectURL(blob);
+  const a   = document.createElement('a');
+  a.href = url; a.download = filename; a.click();
+  URL.revokeObjectURL(url);
+}
+
+const OBJECT_NAME = 'bolha-de-sabao';
+
+window.exportGLB = () => {
+  new GLTFExporter().parse(mesh, (buf) => {
+    downloadBlob(new Blob([buf], { type: 'application/octet-stream' }), `${OBJECT_NAME}.glb`);
+  }, (err) => console.error(err), { binary: true });
+};
+
+window.exportOBJ = () => {
+  const result = new OBJExporter().parse(mesh);
+  downloadBlob(new Blob([result], { type: 'text/plain' }), `${OBJECT_NAME}.obj`);
+};
+
+window.exportSTL = () => {
+  const result = new STLExporter().parse(mesh, { binary: true });
+  downloadBlob(new Blob([result], { type: 'application/octet-stream' }), `${OBJECT_NAME}.stl`);
+};
+
+window.exportPNG = (scale = 1) => {
+  const w = renderer.domElement.width  * scale;
+  const h = renderer.domElement.height * scale;
+  renderer.setSize(w, h);
+  renderer.render(scene, camera);
+  renderer.domElement.toBlob((blob) => {
+    downloadBlob(blob, `${OBJECT_NAME}-${scale}x.png`);
+    onResize();
+  }, 'image/png');
+};
+
+// ─────────────────────────────────────────────
+// RESIZE
+// ─────────────────────────────────────────────
+const viewerEl = document.getElementById('viewer');
+function onResize() {
+  const w = viewerEl.clientWidth;
+  const h = viewerEl.clientHeight;
+  renderer.setSize(w, h, false);
+  camera.aspect = w / h;
+  camera.updateProjectionMatrix();
+}
+new ResizeObserver(onResize).observe(viewerEl);
+onResize();
+
+// ─────────────────────────────────────────────
+// LOOP
+// ─────────────────────────────────────────────
+function animate() {
+  requestAnimationFrame(animate);
+  controls.update();
+  renderer.render(scene, camera);
+}
+
+// INIT
+buildGeometry();
+animate();
+</script>
+</body>
+</html>
