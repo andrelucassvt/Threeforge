@@ -1,0 +1,640 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Detetive Homens de Preto — ThreeJS Viewer</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&display=swap" rel="stylesheet" />
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: #0a0a0a;
+    color: #f0f0f0;
+    font-family: 'DM Mono', monospace;
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+    overflow: hidden;
+  }
+
+  /* ── HEADER ── */
+  header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 24px;
+    background: #111113;
+    border-bottom: 1px solid rgba(255,255,255,0.07);
+    flex-shrink: 0;
+  }
+  header h1 { font-size: 13px; color: #f0f0f0; letter-spacing: 0.06em; font-weight: 500; }
+  header .actions { display: flex; gap: 8px; }
+  header button {
+    background: rgba(255,255,255,0.06);
+    border: 1px solid rgba(255,255,255,0.1);
+    color: #6e6e73;
+    padding: 5px 14px;
+    font-family: inherit;
+    font-size: 11px;
+    cursor: pointer;
+    border-radius: 8px;
+    transition: all 0.2s;
+  }
+  header button:hover {
+    background: rgba(255,255,255,0.1);
+    color: #f0f0f0;
+    border-color: rgba(255,255,255,0.2);
+  }
+
+  /* ── MAIN LAYOUT ── */
+  main {
+    display: flex;
+    flex: 1;
+    overflow: hidden;
+  }
+
+  /* ── VIEWER ── */
+  #viewer {
+    flex: 1;
+    position: relative;
+    background: #111113;
+  }
+  #viewer canvas {
+    display: block;
+    width: 100% !important;
+    height: 100% !important;
+  }
+  #viewer-hint {
+    position: absolute;
+    bottom: 16px;
+    left: 50%;
+    transform: translateX(-50%);
+    font-size: 10px;
+    color: #3d3d40;
+    pointer-events: none;
+    white-space: nowrap;
+  }
+
+  /* ── PANEL ── */
+  aside {
+    width: 272px;
+    flex-shrink: 0;
+    background: #111113;
+    border-left: 1px solid rgba(255,255,255,0.07);
+    display: flex;
+    flex-direction: column;
+    overflow-y: auto;
+  }
+
+  .section {
+    padding: 20px 18px;
+    border-bottom: 1px solid rgba(255,255,255,0.05);
+  }
+  .section-title {
+    font-size: 8px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: #3d3d40;
+    margin-bottom: 16px;
+  }
+
+  /* sliders */
+  .param-row { margin-bottom: 16px; }
+  .param-label {
+    display: flex;
+    justify-content: space-between;
+    font-size: 11px;
+    color: #6e6e73;
+    margin-bottom: 7px;
+  }
+  .param-label span { color: #f0f0f0; }
+  input[type="range"] {
+    width: 100%;
+    accent-color: #00ff88;
+    cursor: pointer;
+  }
+
+  /* select */
+  .param-select {
+    width: 100%;
+    background: rgba(255,255,255,0.05);
+    border: 1px solid rgba(255,255,255,0.1);
+    color: #f0f0f0;
+    font-family: inherit;
+    font-size: 11px;
+    padding: 7px 10px;
+    border-radius: 8px;
+    cursor: pointer;
+    margin-top: 4px;
+  }
+
+  /* color */
+  .color-row { display: flex; align-items: center; gap: 10px; font-size: 11px; color: #6e6e73; }
+  input[type="color"] { width: 36px; height: 26px; border: none; background: none; cursor: pointer; border-radius: 4px; }
+
+  /* export buttons */
+  .export-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+  }
+  .btn-export {
+    background: rgba(255,255,255,0.05);
+    border: 1px solid rgba(255,255,255,0.1);
+    color: #6e6e73;
+    font-family: inherit;
+    font-size: 11px;
+    padding: 9px 4px;
+    border-radius: 8px;
+    cursor: pointer;
+    text-align: center;
+    transition: all 0.2s;
+  }
+  .btn-export:hover {
+    background: rgba(255,255,255,0.09);
+    color: #f0f0f0;
+    border-color: rgba(255,255,255,0.18);
+  }
+  .btn-export.primary {
+    grid-column: span 2;
+    border-color: rgba(0,255,136,0.3);
+    color: #00ff88;
+    background: rgba(0,255,136,0.05);
+  }
+  .btn-export.primary:hover {
+    background: rgba(0,255,136,0.1);
+    border-color: rgba(0,255,136,0.5);
+  }
+
+  /* info */
+  .info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  .info-item { font-size: 10px; color: #3d3d40; }
+  .info-item strong { display: block; color: #6e6e73; font-size: 11px; margin-bottom: 2px; }
+</style>
+
+<!-- Three.js via importmap -->
+<script type="importmap">
+{
+  "imports": {
+    "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+    "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
+  }
+}
+</script>
+</head>
+<body>
+
+<header>
+  <h1>Detetive Homens de Preto</h1>
+  <div class="actions">
+    <button onclick="resetParams()">↺ Reset</button>
+    <button onclick="toggleWireframe()">⬡ Wire</button>
+  </div>
+</header>
+
+<main>
+  <!-- ── VIEWER ── -->
+  <div id="viewer">
+    <canvas id="c"></canvas>
+    <div id="viewer-hint">Clique e arraste para orbitar · Scroll para zoom · Botão do meio para pan</div>
+  </div>
+
+  <!-- ── PANEL ── -->
+  <aside>
+
+    <!-- PARÂMETROS -->
+    <div class="section">
+      <div class="section-title">Parâmetros</div>
+
+      <div class="param-row">
+        <div class="param-label">Altura <span id="val-height">1.85</span></div>
+        <input type="range" id="sl-height" min="1.2" max="2.4" step="0.05" value="1.85"
+               oninput="updateParam('height', this.value)" />
+      </div>
+
+      <div class="param-row">
+        <div class="param-label">Cabeça <span id="val-headSize">1.00</span></div>
+        <input type="range" id="sl-headSize" min="0.75" max="1.35" step="0.05" value="1"
+               oninput="updateParam('headSize', this.value)" />
+      </div>
+
+      <div class="param-row">
+        <div class="param-label">Ombros <span id="val-shoulderWidth">0.56</span></div>
+        <input type="range" id="sl-shoulderWidth" min="0.35" max="0.85" step="0.01" value="0.56"
+               oninput="updateParam('shoulderWidth', this.value)" />
+      </div>
+
+      <div class="param-row">
+        <div class="param-label">Membros <span id="val-limbThickness">0.12</span></div>
+        <input type="range" id="sl-limbThickness" min="0.07" max="0.2" step="0.01" value="0.12"
+               oninput="updateParam('limbThickness', this.value)" />
+      </div>
+
+      <div class="param-row">
+        <div class="param-label">Sobretudo <span id="val-coatLength">0.28</span></div>
+        <input type="range" id="sl-coatLength" min="0.1" max="0.45" step="0.01" value="0.28"
+               oninput="updateParam('coatLength', this.value)" />
+      </div>
+
+      <div class="param-row">
+        <div class="param-label">Óculos <span id="val-glassesWidth">0.34</span></div>
+        <input type="range" id="sl-glassesWidth" min="0.22" max="0.46" step="0.01" value="0.34"
+               oninput="updateParam('glassesWidth', this.value)" />
+      </div>
+    </div>
+
+    <!-- MATERIAL -->
+    <div class="section">
+      <div class="section-title">Material</div>
+
+      <div class="param-row">
+        <div class="color-row">
+          Cor base
+          <input type="color" id="cl-color" value="#050506" oninput="updateColor(this.value)" />
+        </div>
+      </div>
+
+      <div class="param-row">
+        <div class="param-label">Rugosidade <span id="val-roughness">0.58</span></div>
+        <input type="range" id="sl-roughness" min="0" max="1" step="0.01" value="0.58"
+               oninput="updateMaterial('roughness', this.value)" />
+      </div>
+
+      <div class="param-row">
+        <div class="param-label">Metalicidade <span id="val-metalness">0.08</span></div>
+        <input type="range" id="sl-metalness" min="0" max="1" step="0.01" value="0.08"
+               oninput="updateMaterial('metalness', this.value)" />
+      </div>
+    </div>
+
+    <!-- CENA -->
+    <div class="section">
+      <div class="section-title">Cena</div>
+
+      <div class="param-row">
+        <div class="param-label">Fundo</div>
+        <select class="param-select" onchange="setBackground(this.value)">
+          <option value="#1a1a1a">Escuro (padrão)</option>
+          <option value="#ffffff">Branco</option>
+          <option value="#0a0a1a">Azul noite</option>
+          <option value="transparent">Transparente</option>
+        </select>
+      </div>
+    </div>
+
+    <!-- EXPORTAR -->
+    <div class="section">
+      <div class="section-title">Exportar</div>
+      <div class="export-grid">
+        <button class="btn-export primary" onclick="exportGLB()">↓ GLB</button>
+        <button class="btn-export" onclick="exportOBJ()">↓ OBJ</button>
+        <button class="btn-export" onclick="exportSTL()">↓ STL</button>
+        <button class="btn-export" onclick="exportPNG(1)">↓ PNG 1×</button>
+        <button class="btn-export" onclick="exportPNG(2)">↓ PNG 2×</button>
+        <button class="btn-export" onclick="exportPNG(4)">↓ PNG 4×</button>
+      </div>
+    </div>
+
+    <!-- INFO -->
+    <div class="section">
+      <div class="section-title">Info</div>
+      <div class="info-grid">
+        <div class="info-item"><strong id="info-verts">—</strong>vértices</div>
+        <div class="info-item"><strong id="info-tris">—</strong>triângulos</div>
+      </div>
+    </div>
+
+  </aside>
+</main>
+
+<script type="module">
+import * as THREE from 'three';
+import { OrbitControls }  from 'three/addons/controls/OrbitControls.js';
+import { GLTFExporter }   from 'three/addons/exporters/GLTFExporter.js';
+import { OBJExporter }    from 'three/addons/exporters/OBJExporter.js';
+import { STLExporter }    from 'three/addons/exporters/STLExporter.js';
+
+// ─────────────────────────────────────────────
+// PARÂMETROS (edite aqui)
+// ─────────────────────────────────────────────
+const PARAMS = {
+  height:        1.85,
+  headSize:      1.0,
+  shoulderWidth: 0.56,
+  limbThickness: 0.12,
+  coatLength:    0.28,
+  glassesWidth:  0.34,
+  roughness:     0.58,
+  metalness:     0.08,
+  color:         0x050506,
+};
+
+// ─────────────────────────────────────────────
+// SCENE SETUP
+// ─────────────────────────────────────────────
+const canvas   = document.getElementById('c');
+const renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
+renderer.setPixelRatio(window.devicePixelRatio);
+renderer.shadowMap.enabled = true;
+renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+renderer.setClearColor(0x1a1a1a);
+
+const scene  = new THREE.Scene();
+const camera = new THREE.PerspectiveCamera(45, 1, 0.01, 1000);
+camera.position.set(5, 4, 7);
+
+const controls = new OrbitControls(camera, renderer.domElement);
+controls.enableDamping = true;
+controls.dampingFactor = 0.06;
+
+// Iluminação
+const ambient = new THREE.AmbientLight(0xffffff, 0.4);
+scene.add(ambient);
+
+const dirLight = new THREE.DirectionalLight(0xffffff, 1.2);
+dirLight.position.set(5, 10, 7);
+dirLight.castShadow = true;
+dirLight.shadow.mapSize.set(2048, 2048);
+scene.add(dirLight);
+
+const fill = new THREE.DirectionalLight(0x8888ff, 0.3);
+fill.position.set(-5, -2, -5);
+scene.add(fill);
+
+// Grid
+const grid = new THREE.GridHelper(20, 20, 0x333333, 0x222222);
+scene.add(grid);
+
+// Plano de sombra
+const shadowPlane = new THREE.Mesh(
+  new THREE.PlaneGeometry(40, 40),
+  new THREE.ShadowMaterial({ opacity: 0.25 })
+);
+shadowPlane.rotation.x = -Math.PI / 2;
+shadowPlane.receiveShadow = true;
+scene.add(shadowPlane);
+
+// ─────────────────────────────────────────────
+// PERSONAGEM
+// ─────────────────────────────────────────────
+let character;
+const suitMaterial = new THREE.MeshStandardMaterial({
+  color:     PARAMS.color,
+  roughness: PARAMS.roughness,
+  metalness: PARAMS.metalness,
+});
+const shirtMaterial = new THREE.MeshStandardMaterial({ color: 0xf4f4ee, roughness: 0.62, metalness: 0.02 });
+const tieMaterial = new THREE.MeshStandardMaterial({ color: 0x010101, roughness: 0.48, metalness: 0.16 });
+const skinMaterial = new THREE.MeshStandardMaterial({ color: 0xc58f68, roughness: 0.72, metalness: 0.02 });
+const glassesMaterial = new THREE.MeshStandardMaterial({ color: 0x050508, roughness: 0.18, metalness: 0.45 });
+const shoeMaterial = new THREE.MeshStandardMaterial({ color: 0x020202, roughness: 0.3, metalness: 0.2 });
+const badgeMaterial = new THREE.MeshStandardMaterial({ color: 0xd7d7cf, roughness: 0.35, metalness: 0.65 });
+const allMaterials = [suitMaterial, shirtMaterial, tieMaterial, skinMaterial, glassesMaterial, shoeMaterial, badgeMaterial];
+
+function buildGeometry() {
+  if (character) {
+    character.traverse(child => {
+      if (child.isMesh) child.geometry.dispose();
+    });
+    scene.remove(character);
+  }
+
+  character = new THREE.Group();
+
+  const h = PARAMS.height;
+  const headH = (h / 7.5) * PARAMS.headSize;
+  const neckH = h * 0.035;
+  const torsoH = h * 0.31;
+  const upperArmH = h * 0.18;
+  const lowerArmH = h * 0.15;
+  const upperLegH = h * 0.25;
+  const lowerLegH = h * 0.21;
+  const footH = h * 0.045;
+  const sw = PARAMS.shoulderWidth;
+  const lt = PARAMS.limbThickness;
+  const depth = sw * 0.46;
+  const legX = sw * 0.22;
+  const hipY = footH + lowerLegH + upperLegH;
+  const shoulderY = hipY + torsoH;
+  const headMidY = shoulderY + neckH + headH / 2;
+  const armY = shoulderY - lt * 0.6;
+  const upperArmX = sw / 2 + upperArmH / 2;
+  const lowerArmX = upperArmX + upperArmH / 2 + lowerArmH / 2;
+
+  function part(geo, material, x, y, z = 0, rotX = 0, rotY = 0, rotZ = 0) {
+    const mesh = new THREE.Mesh(geo, material);
+    mesh.castShadow = true;
+    mesh.receiveShadow = true;
+    mesh.position.set(x, y, z);
+    mesh.rotation.set(rotX, rotY, rotZ);
+    character.add(mesh);
+    return mesh;
+  }
+
+  // Silhueta principal
+  part(new THREE.BoxGeometry(sw, torsoH, depth), suitMaterial, 0, hipY + torsoH / 2, 0);
+  part(new THREE.BoxGeometry(sw * 0.32, torsoH * 0.92, depth + 0.012), shirtMaterial, 0, hipY + torsoH * 0.53, depth / 2 + 0.008);
+  part(new THREE.ConeGeometry(sw * 0.08, torsoH * 0.62, 4), tieMaterial, 0, hipY + torsoH * 0.53, depth / 2 + 0.022, 0, 0, Math.PI / 4);
+  part(new THREE.BoxGeometry(sw * 1.06, PARAMS.coatLength, depth * 1.08), suitMaterial, 0, hipY - PARAMS.coatLength / 2 + 0.02, 0);
+
+  // Cabeça, pescoço e chapéu
+  part(new THREE.CylinderGeometry(lt * 0.45, lt * 0.55, neckH, 12), skinMaterial, 0, shoulderY + neckH / 2, 0);
+  part(new THREE.SphereGeometry(headH / 2, 24, 16), skinMaterial, 0, headMidY, 0);
+  part(new THREE.CylinderGeometry(headH * 0.58, headH * 0.58, headH * 0.11, 32), suitMaterial, 0, headMidY + headH * 0.48, 0);
+  part(new THREE.CylinderGeometry(headH * 0.36, headH * 0.42, headH * 0.42, 24), suitMaterial, 0, headMidY + headH * 0.72, 0);
+
+  // Óculos escuros
+  const lensW = PARAMS.glassesWidth * 0.38;
+  const lensH = headH * 0.16;
+  const lensZ = headH * 0.48;
+  const glassesY = headMidY + headH * 0.08;
+  part(new THREE.BoxGeometry(lensW, lensH, 0.018), glassesMaterial, -lensW * 0.62, glassesY, lensZ);
+  part(new THREE.BoxGeometry(lensW, lensH, 0.018), glassesMaterial, lensW * 0.62, glassesY, lensZ);
+  part(new THREE.BoxGeometry(lensW * 0.45, lensH * 0.28, 0.02), glassesMaterial, 0, glassesY, lensZ + 0.002);
+
+  // Braços em T-pose com mãos visíveis
+  part(new THREE.CylinderGeometry(lt / 2, lt / 2, upperArmH, 12), suitMaterial, upperArmX, armY, 0, 0, 0, -Math.PI / 2);
+  part(new THREE.CylinderGeometry(lt * 0.42, lt * 0.48, lowerArmH, 12), suitMaterial, lowerArmX, armY, 0, 0, 0, -Math.PI / 2);
+  part(new THREE.SphereGeometry(lt * 0.48, 12, 8), skinMaterial, lowerArmX + lowerArmH / 2 + lt * 0.2, armY, 0);
+  part(new THREE.CylinderGeometry(lt / 2, lt / 2, upperArmH, 12), suitMaterial, -upperArmX, armY, 0, 0, 0, Math.PI / 2);
+  part(new THREE.CylinderGeometry(lt * 0.42, lt * 0.48, lowerArmH, 12), suitMaterial, -lowerArmX, armY, 0, 0, 0, Math.PI / 2);
+  part(new THREE.SphereGeometry(lt * 0.48, 12, 8), skinMaterial, -lowerArmX - lowerArmH / 2 - lt * 0.2, armY, 0);
+
+  // Pernas e sapatos
+  part(new THREE.CylinderGeometry(lt * 0.62, lt * 0.68, upperLegH, 12), suitMaterial, legX, footH + lowerLegH + upperLegH / 2, 0);
+  part(new THREE.CylinderGeometry(lt * 0.5, lt * 0.56, lowerLegH, 12), suitMaterial, legX, footH + lowerLegH / 2, 0);
+  part(new THREE.CylinderGeometry(lt * 0.62, lt * 0.68, upperLegH, 12), suitMaterial, -legX, footH + lowerLegH + upperLegH / 2, 0);
+  part(new THREE.CylinderGeometry(lt * 0.5, lt * 0.56, lowerLegH, 12), suitMaterial, -legX, footH + lowerLegH / 2, 0);
+  part(new THREE.BoxGeometry(lt * 1.45, footH, lt * 2.15), shoeMaterial, legX, footH / 2, lt * 0.28);
+  part(new THREE.BoxGeometry(lt * 1.45, footH, lt * 2.15), shoeMaterial, -legX, footH / 2, lt * 0.28);
+
+  // Detalhes de agente/detetive
+  part(new THREE.BoxGeometry(sw * 0.16, torsoH * 0.11, 0.012), badgeMaterial, sw * 0.23, hipY + torsoH * 0.62, depth / 2 + 0.024);
+  part(new THREE.BoxGeometry(sw * 0.06, torsoH * 0.34, 0.012), suitMaterial, -sw * 0.16, hipY + torsoH * 0.62, depth / 2 + 0.025, 0, 0, -0.18);
+  part(new THREE.BoxGeometry(sw * 0.06, torsoH * 0.34, 0.012), suitMaterial, sw * 0.16, hipY + torsoH * 0.62, depth / 2 + 0.025, 0, 0, 0.18);
+
+  scene.add(character);
+
+  updateInfo();
+}
+
+function updateInfo() {
+  if (!character) return;
+  let verts = 0;
+  let tris = 0;
+  character.traverse(child => {
+    if (!child.isMesh) return;
+    const pos = child.geometry.attributes.position;
+    verts += pos.count;
+    tris += child.geometry.index
+      ? child.geometry.index.count / 3
+      : Math.floor(pos.count / 3);
+  });
+  document.getElementById('info-verts').textContent = verts;
+  document.getElementById('info-tris').textContent = tris;
+}
+
+// ─────────────────────────────────────────────
+// CONTROLES UI (expostos ao window)
+// ─────────────────────────────────────────────
+window.updateParam = (key, val) => {
+  PARAMS[key] = parseFloat(val);
+  document.getElementById(`val-${key}`).textContent = parseFloat(val).toFixed(2);
+  buildGeometry();
+};
+
+window.updateMaterial = (key, val) => {
+  PARAMS[key] = parseFloat(val);
+  allMaterials.forEach(material => {
+    material[key] = parseFloat(val);
+  });
+  document.getElementById(`val-${key}`).textContent = parseFloat(val).toFixed(2);
+};
+
+window.updateColor = (hex) => {
+  PARAMS.color = new THREE.Color(hex).getHex();
+  suitMaterial.color.set(hex);
+};
+
+window.setBackground = (color) => {
+  if (color === 'transparent') {
+    renderer.setClearAlpha(0);
+    renderer.setClearColor(0x000000, 0);
+  } else {
+    renderer.setClearAlpha(1);
+    renderer.setClearColor(color);
+  }
+};
+
+window.toggleWireframe = () => {
+  const next = !suitMaterial.wireframe;
+  allMaterials.forEach(material => {
+    material.wireframe = next;
+  });
+};
+
+window.resetParams = () => {
+  PARAMS.height = 1.85;
+  PARAMS.headSize = 1.0;
+  PARAMS.shoulderWidth = 0.56;
+  PARAMS.limbThickness = 0.12;
+  PARAMS.coatLength = 0.28;
+  PARAMS.glassesWidth = 0.34;
+  PARAMS.roughness = 0.58;
+  PARAMS.metalness = 0.08;
+  PARAMS.color = 0x050506;
+  document.getElementById('sl-height').value = 1.85;
+  document.getElementById('sl-headSize').value = 1.0;
+  document.getElementById('sl-shoulderWidth').value = 0.56;
+  document.getElementById('sl-limbThickness').value = 0.12;
+  document.getElementById('sl-coatLength').value = 0.28;
+  document.getElementById('sl-glassesWidth').value = 0.34;
+  document.getElementById('sl-roughness').value = 0.58;
+  document.getElementById('sl-metalness').value = 0.08;
+  document.getElementById('cl-color').value = '#050506';
+  document.getElementById('val-height').textContent = '1.85';
+  document.getElementById('val-headSize').textContent = '1.00';
+  document.getElementById('val-shoulderWidth').textContent = '0.56';
+  document.getElementById('val-limbThickness').textContent = '0.12';
+  document.getElementById('val-coatLength').textContent = '0.28';
+  document.getElementById('val-glassesWidth').textContent = '0.34';
+  document.getElementById('val-roughness').textContent = '0.58';
+  document.getElementById('val-metalness').textContent = '0.08';
+  suitMaterial.color.set(PARAMS.color);
+  allMaterials.forEach(material => {
+    material.roughness = PARAMS.roughness;
+    material.metalness = PARAMS.metalness;
+  });
+  buildGeometry();
+};
+
+// ─────────────────────────────────────────────
+// EXPORTADORES
+// ─────────────────────────────────────────────
+function downloadBlob(blob, filename) {
+  const url = URL.createObjectURL(blob);
+  const a   = document.createElement('a');
+  a.href = url; a.download = filename; a.click();
+  URL.revokeObjectURL(url);
+}
+
+const OBJECT_NAME = 'detetive-homens-de-preto';
+
+window.exportGLB = () => {
+  new GLTFExporter().parse(character, (buf) => {
+    downloadBlob(new Blob([buf], { type: 'application/octet-stream' }), `${OBJECT_NAME}.glb`);
+  }, (err) => console.error(err), { binary: true });
+};
+
+window.exportOBJ = () => {
+  const result = new OBJExporter().parse(character);
+  downloadBlob(new Blob([result], { type: 'text/plain' }), `${OBJECT_NAME}.obj`);
+};
+
+window.exportSTL = () => {
+  const result = new STLExporter().parse(character, { binary: true });
+  downloadBlob(new Blob([result], { type: 'application/octet-stream' }), `${OBJECT_NAME}.stl`);
+};
+
+window.exportPNG = (scale = 1) => {
+  const w = renderer.domElement.width  * scale;
+  const h = renderer.domElement.height * scale;
+  renderer.setSize(w, h);
+  renderer.render(scene, camera);
+  renderer.domElement.toBlob((blob) => {
+    downloadBlob(blob, `${OBJECT_NAME}-${scale}x.png`);
+    // restaura tamanho
+    onResize();
+  }, 'image/png');
+};
+
+// ─────────────────────────────────────────────
+// RESIZE
+// ─────────────────────────────────────────────
+const viewerEl = document.getElementById('viewer');
+function onResize() {
+  const w = viewerEl.clientWidth;
+  const h = viewerEl.clientHeight;
+  renderer.setSize(w, h, false);
+  camera.aspect = w / h;
+  camera.updateProjectionMatrix();
+}
+new ResizeObserver(onResize).observe(viewerEl);
+onResize();
+
+// ─────────────────────────────────────────────
+// LOOP
+// ─────────────────────────────────────────────
+function animate() {
+  requestAnimationFrame(animate);
+  controls.update();
+  renderer.render(scene, camera);
+}
+
+// INIT
+buildGeometry();
+animate();
+</script>
+</body>
+</html>
