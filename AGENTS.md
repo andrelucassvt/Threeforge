@@ -8,7 +8,7 @@ Workspace estático de objetos 3D parametrizados em Three.js: cada objeto é um 
 - Addons usados: `OrbitControls`, `GLTFExporter`, `OBJExporter`, `STLExporter`
 - Sem `package.json`, sem build, sem bundler, sem servidor — abre no navegador
 - Fonte: `DM Mono` (Google Fonts), fallback `monospace`
-- Paleta: bg `#0d0d0d`/surface `#111`/accent `#00ff88`/text `#eee`
+- Paleta: bg `#0a0a0a`/surface `#161618`/accent `#00ff88`/text `#f0f0f0`/muted `#6e6e73`/border `rgba(255,255,255,0.07)` — estilo Apple dark minimalista; accent usado com moderação
 
 ## Estrutura
 

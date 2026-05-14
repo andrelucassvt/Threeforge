@@ -9,8 +9,8 @@
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
   body {
-    background: #0d0d0d;
-    color: #eee;
+    background: #0a0a0a;
+    color: #f0f0f0;
     font-family: 'DM Mono', monospace;
     display: flex;
     flex-direction: column;
@@ -23,25 +23,29 @@
     display: flex;
     align-items: center;
     justify-content: space-between;
-    padding: 10px 20px;
-    background: #111;
-    border-bottom: 1px solid #222;
+    padding: 12px 24px;
+    background: #111113;
+    border-bottom: 1px solid rgba(255,255,255,0.07);
     flex-shrink: 0;
   }
-  header h1 { font-size: 14px; color: #00ff88; letter-spacing: 0.1em; text-transform: uppercase; }
+  header h1 { font-size: 13px; color: #f0f0f0; letter-spacing: 0.06em; font-weight: 500; }
   header .actions { display: flex; gap: 8px; }
   header button {
-    background: #1a1a1a;
-    border: 1px solid #333;
-    color: #aaa;
-    padding: 5px 12px;
+    background: rgba(255,255,255,0.06);
+    border: 1px solid rgba(255,255,255,0.1);
+    color: #6e6e73;
+    padding: 5px 14px;
     font-family: inherit;
     font-size: 11px;
     cursor: pointer;
-    border-radius: 4px;
-    transition: all 0.15s;
+    border-radius: 8px;
+    transition: all 0.2s;
   }
-  header button:hover { border-color: #00ff88; color: #00ff88; }
+  header button:hover {
+    background: rgba(255,255,255,0.1);
+    color: #f0f0f0;
+    border-color: rgba(255,255,255,0.2);
+  }
 
   /* ── MAIN LAYOUT ── */
   main {
@@ -54,7 +58,7 @@
   #viewer {
     flex: 1;
     position: relative;
-    background: #1a1a1a;
+    background: #111113;
   }
   #viewer canvas {
     display: block;
@@ -63,48 +67,48 @@
   }
   #viewer-hint {
     position: absolute;
-    bottom: 12px;
+    bottom: 16px;
     left: 50%;
     transform: translateX(-50%);
     font-size: 10px;
-    color: #444;
+    color: #3d3d40;
     pointer-events: none;
     white-space: nowrap;
   }
 
   /* ── PANEL ── */
   aside {
-    width: 280px;
+    width: 272px;
     flex-shrink: 0;
-    background: #111;
-    border-left: 1px solid #222;
+    background: #111113;
+    border-left: 1px solid rgba(255,255,255,0.07);
     display: flex;
     flex-direction: column;
     overflow-y: auto;
   }
 
   .section {
-    padding: 16px;
-    border-bottom: 1px solid #1e1e1e;
+    padding: 20px 18px;
+    border-bottom: 1px solid rgba(255,255,255,0.05);
   }
   .section-title {
-    font-size: 9px;
-    letter-spacing: 0.15em;
+    font-size: 8px;
+    letter-spacing: 0.14em;
     text-transform: uppercase;
-    color: #555;
-    margin-bottom: 14px;
+    color: #3d3d40;
+    margin-bottom: 16px;
   }
 
   /* sliders */
-  .param-row { margin-bottom: 14px; }
+  .param-row { margin-bottom: 16px; }
   .param-label {
     display: flex;
     justify-content: space-between;
     font-size: 11px;
-    color: #aaa;
-    margin-bottom: 5px;
+    color: #6e6e73;
+    margin-bottom: 7px;
   }
-  .param-label span { color: #00ff88; }
+  .param-label span { color: #f0f0f0; }
   input[type="range"] {
     width: 100%;
     accent-color: #00ff88;
@@ -114,20 +118,20 @@
   /* select */
   .param-select {
     width: 100%;
-    background: #1a1a1a;
-    border: 1px solid #333;
-    color: #eee;
+    background: rgba(255,255,255,0.05);
+    border: 1px solid rgba(255,255,255,0.1);
+    color: #f0f0f0;
     font-family: inherit;
     font-size: 11px;
-    padding: 5px 8px;
-    border-radius: 4px;
+    padding: 7px 10px;
+    border-radius: 8px;
     cursor: pointer;
     margin-top: 4px;
   }
 
   /* color */
-  .color-row { display: flex; align-items: center; gap: 10px; font-size: 11px; color: #aaa; }
-  input[type="color"] { width: 36px; height: 24px; border: none; background: none; cursor: pointer; }
+  .color-row { display: flex; align-items: center; gap: 10px; font-size: 11px; color: #6e6e73; }
+  input[type="color"] { width: 36px; height: 26px; border: none; background: none; cursor: pointer; border-radius: 4px; }
 
   /* export buttons */
   .export-grid {
@@ -136,25 +140,37 @@
     gap: 8px;
   }
   .btn-export {
-    background: #1a1a1a;
-    border: 1px solid #333;
-    color: #ccc;
+    background: rgba(255,255,255,0.05);
+    border: 1px solid rgba(255,255,255,0.1);
+    color: #6e6e73;
     font-family: inherit;
     font-size: 11px;
-    padding: 8px 4px;
-    border-radius: 4px;
+    padding: 9px 4px;
+    border-radius: 8px;
     cursor: pointer;
     text-align: center;
-    transition: all 0.15s;
+    transition: all 0.2s;
   }
-  .btn-export:hover { border-color: #00ff88; color: #00ff88; background: #0d2018; }
-  .btn-export.primary { grid-column: span 2; border-color: #00ff88; color: #00ff88; }
-  .btn-export.primary:hover { background: #00ff88; color: #000; }
+  .btn-export:hover {
+    background: rgba(255,255,255,0.09);
+    color: #f0f0f0;
+    border-color: rgba(255,255,255,0.18);
+  }
+  .btn-export.primary {
+    grid-column: span 2;
+    border-color: rgba(0,255,136,0.3);
+    color: #00ff88;
+    background: rgba(0,255,136,0.05);
+  }
+  .btn-export.primary:hover {
+    background: rgba(0,255,136,0.1);
+    border-color: rgba(0,255,136,0.5);
+  }
 
   /* info */
-  .info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
-  .info-item { font-size: 10px; color: #555; }
-  .info-item strong { display: block; color: #888; font-size: 11px; }
+  .info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  .info-item { font-size: 10px; color: #3d3d40; }
+  .info-item strong { display: block; color: #6e6e73; font-size: 11px; margin-bottom: 2px; }
 </style>
 
 <!-- Three.js via importmap -->
