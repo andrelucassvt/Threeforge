@@ -4,7 +4,7 @@
 
 ## Visão Geral
 
-O projeto não tem auto-discovery — adicionar um arquivo em `objetos/` não basta. O processo correto, definido em `CLAUDE.md`, tem três passos obrigatórios: (1) copiar `_template/viewer-template.html` para `objetos/<nome-kebab>.html`; (2) editar o novo arquivo para conter a geometria desejada, ajustando `PARAMS`, `buildGeometry()`, os sliders no HTML e a constante `OBJECT_NAME`; (3) adicionar um item ao array `OBJECTS` no `index.html` para que o card apareça na galeria.
+O projeto não tem auto-discovery — adicionar um arquivo em `src/objetos/` não basta. O processo correto, definido em `CLAUDE.md`, tem três passos obrigatórios: (1) copiar `src/_template/viewer-template.html` para `src/objetos/<nome-kebab>.html`; (2) editar o novo arquivo para conter a geometria desejada, ajustando `PARAMS`, `buildGeometry()`, os sliders no HTML e a constante `OBJECT_NAME`; (3) adicionar um item ao array `OBJECTS` no `index.html` para que o card apareça na galeria.
 
 O resultado final é um arquivo HTML standalone funcional (sem dependências locais, tudo via CDN) que pode ser aberto direto no navegador ou pela galeria. O template já entrega scene/luzes/orbit/material/exportadores prontos — o que muda entre objetos é essencialmente a função `buildGeometry()` e a definição de `PARAMS`.
 
@@ -12,7 +12,7 @@ Esse fluxo é uma **convenção do projeto**, não um sistema automatizado. A ob
 
 ## Passo a Passo
 
-1. **Copiar o template** — origem `_template/viewer-template.html` → destino `objetos/<nome-kebab>.html`.
+1. **Copiar o template** — origem `src/_template/viewer-template.html` → destino `src/objetos/<nome-kebab>.html`.
    - Nome em kebab-case, descritivo (`esfera-geodesica-v2.html`, `cubo-chanfrado.html`).
 2. **Trocar o título da página** — `<title>` (linha 6) e `<h1>` (linha 173) → nome legível do objeto.
 3. **Definir `PARAMS`** — `viewer-template.html:290–297` → ajustar chaves/valores para os parâmetros que fazem sentido para a geometria.
@@ -25,7 +25,7 @@ Esse fluxo é uma **convenção do projeto**, não um sistema automatizado. A ob
 8. **Registrar na galeria** — `index.html:276–285` (array `OBJECTS`) → adicionar item:
    ```js
    {
-     file: 'objetos/<nome-kebab>.html',
+     file: 'src/objetos/<nome-kebab>.html',
      name: 'Nome Legível',
      desc: 'Descrição curta dos parâmetros principais.',
      icon: '⬡',
@@ -36,7 +36,7 @@ Esse fluxo é uma **convenção do projeto**, não um sistema automatizado. A ob
 
 ### Caminhos alternativos
 
-- **Esquecer de registrar no `index.html`:** o arquivo funciona individualmente (`objetos/<nome>.html` direto), mas não aparece na galeria.
+- **Esquecer de registrar no `index.html`:** o arquivo funciona individualmente (`src/objetos/<nome>.html` direto), mas não aparece na galeria.
 - **Esquecer de trocar `OBJECT_NAME`:** todos os exports saem como `objeto.glb`/`objeto.obj`/etc., colidindo com outros objetos no `~/Downloads`.
 - **`PARAMS` sem slider correspondente:** o parâmetro existe internamente mas é imutável pela UI; rebuild não é disparado.
 - **Slider sem chave em `PARAMS`:** `updateParam` faz `PARAMS[key] = ...` mas a chave não é lida em `buildGeometry()` → mudança silenciosa que não afeta a mesh.
@@ -45,14 +45,14 @@ Esse fluxo é uma **convenção do projeto**, não um sistema automatizado. A ob
 
 | Camada | Arquivo | Responsabilidade |
 |--------|---------|------------------|
-| Template | `_template/viewer-template.html` | Fonte da cópia; contém scene, sliders de exemplo, exportadores |
-| Documento de regras | `CLAUDE.md`, `AGENTS.md` | Define a obrigatoriedade de salvar em `objetos/` e atualizar `index.html` |
-| Saída (novo arquivo) | `objetos/<nome-kebab>.html` | Viewer customizado; standalone |
+| Template | `src/_template/viewer-template.html` | Fonte da cópia; contém scene, sliders de exemplo, exportadores |
+| Documento de regras | `CLAUDE.md`, `AGENTS.md` | Define a obrigatoriedade de salvar em `src/objetos/` e atualizar `index.html` |
+| Saída (novo arquivo) | `src/objetos/<nome-kebab>.html` | Viewer customizado; standalone |
 | Registro na galeria | `index.html` (array `OBJECTS`, linhas 276–285) | Item descritivo com `file`, `name`, `desc`, `icon`, `tags` |
 
 ## Regras de Negócio Relevantes
 
-- **Localização obrigatória** — `CLAUDE.md` (seção "Regra Obrigatória"): todo objeto deve estar em `objetos/`, em kebab-case. Salvar em outro lugar quebra a expectativa do `index.html`.
+- **Localização obrigatória** — `CLAUDE.md` (seção "Convenções"): todo objeto deve estar em `src/objetos/`, em kebab-case. Salvar em outro lugar quebra a expectativa do `index.html`.
 - **Cada objeto é autônomo** — herdado de `CLAUDE.md` ("Um arquivo HTML por objeto — tudo inline, zero dependências locais"). Não criar arquivos compartilhados; duplicação é aceita.
 - **Dispose ao rebuildar é não-negociável** — `viewer-template.html:355–358`: a regra de `geometry.dispose()` + `scene.remove(mesh)` antes de criar nova mesh é parte do checklist obrigatório em `CLAUDE.md`.
 - **Iluminação padrão deve ser mantida** — `CLAUDE.md` (seção "Iluminação Padrão"): novos objetos devem preservar `AmbientLight(0.4)` + `DirectionalLight(1.2)` + fill azulado. Customizações são exceção, não regra.

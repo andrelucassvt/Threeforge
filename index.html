@@ -259,7 +259,7 @@
 <div class="grid" id="grid">
   <div class="empty" id="empty">
     <div class="empty-icon">◻</div>
-    <div class="empty-text">Nenhum objeto encontrado.<br/>Peça à IA para criar um novo objeto em <code>objetos/</code>.</div>
+    <div class="empty-text">Nenhum objeto encontrado.<br/>Peça à IA para criar um novo objeto em <code>src/objetos/</code>.</div>
   </div>
 </div>
 
@@ -274,14 +274,13 @@
 // A IA deve adicionar um item aqui sempre que criar um novo objeto.
 // ─────────────────────────────────────────────────────────────────
 const OBJECTS = [
-  // Exemplo (remova quando tiver objetos reais):
-  // {
-  //   file: 'objetos/cubo-chanfrado.html',
-  //   name: 'Cubo Chanfrado',
-  //   desc: 'Cubo com arestas chanfradas, controles de tamanho e raio do chanfro.',
-  //   icon: '⬛',
-  //   tags: ['básico', 'geométrico'],
-  // },
+  {
+    file: 'src/objetos/cubo.html',
+    name: 'Cubo',
+    desc: 'Caixa paramétrica com controles de largura, altura e profundidade.',
+    icon: '⬛',
+    tags: ['básico', 'geométrico'],
+  },
 ];
 
 // ─────────────────────────────────────────────────────────────────
@@ -323,7 +322,7 @@ function render(items) {
         <div class="card-tags">${tagsHtml}</div>
       </div>
       <div class="card-footer">
-        <span>${obj.file.replace('objetos/', '')}</span>
+        <span>${obj.file.replace('src/objetos/', '')}</span>
         <span class="card-open">Abrir →</span>
       </div>
     `;

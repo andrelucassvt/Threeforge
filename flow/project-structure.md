@@ -21,7 +21,7 @@ Arquitetura **flat / file-per-object**: não há camadas tradicionais (presentat
 index.html (galeria)
     │
     ▼  [link]
-objetos/<nome>.html (viewer standalone)
+src/objetos/<nome>.html (viewer standalone)
     │
     ├── Three.js Scene  ──►  buildGeometry(PARAMS)
     │                          │
@@ -44,9 +44,9 @@ objetos/<nome>.html (viewer standalone)
 | Feature | Caminho principal | Descrição resumida |
 |---------|------------------|-------------------|
 | Galeria de objetos | `index.html` | Página inicial; lista objetos a partir do array `OBJECTS`, com busca e filtro por tags |
-| Template de viewer | `_template/viewer-template.html` | Base copiada para criar novos objetos — já contém scene, sliders, exportadores e material |
-| Objetos 3D | `objetos/*.html` | (vazio) Cada arquivo é um viewer parametrizado de um objeto específico |
-| Exportações | `exports/` | (vazio) Diretório-alvo sugerido para arquivos exportados pelos viewers |
+| Template de viewer | `src/_template/viewer-template.html` | Base copiada para criar novos objetos — já contém scene, sliders, exportadores e material |
+| Objetos 3D | `src/objetos/*.html` | Cada arquivo é um viewer parametrizado de um objeto específico |
+| Exportações | `src/exports/` | Diretório-alvo sugerido para arquivos exportados pelos viewers |
 
 ## Camadas / Módulos Compartilhados
 
@@ -65,7 +65,7 @@ Não há código compartilhado entre arquivos — cada HTML é autossuficiente p
 | Componente | Arquivo | Responsabilidade |
 |-----------|---------|-----------------|
 | Lista de objetos da galeria | `index.html` (array `OBJECTS`) | Cada item: `{ file, name, desc, icon, tags }`. A IA atualiza este array ao criar novo objeto. |
-| Parâmetros de cada objeto | `objetos/<nome>.html` (objeto `PARAMS`) | Map de valores numéricos (width, height, etc.) lidos por `buildGeometry()` |
+| Parâmetros de cada objeto | `src/objetos/<nome>.html` (objeto `PARAMS`) | Map de valores numéricos (width, height, etc.) lidos por `buildGeometry()` |
 | CDN do Three.js | Importmap inline | Versão fixa `0.160.0` — mudar exige editar cada HTML manualmente |
 | Convenções do projeto | `CLAUDE.md`, `AGENTS.md` | Regras de criação de objetos, layout UI, exportadores, paleta de cores |
 | Sincronização de instruções | `sync-brain.sh` (gitignored) | Script auxiliar (não versionado) — uso fora do escopo do código |

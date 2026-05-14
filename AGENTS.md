@@ -13,9 +13,9 @@ Workspace estático de objetos 3D parametrizados em Three.js: cada objeto é um 
 ## Estrutura
 
 - `index.html` — galeria; array `OBJECTS` hardcoded é a fonte da listagem
-- `_template/viewer-template.html` — base obrigatória para novos objetos (não editar; copiar)
-- `objetos/<nome-kebab>.html` — cada objeto vive aqui, autossuficiente
-- `exports/` — convenção (manual) para arquivos exportados; não é alvo automático do download
+- `src/_template/viewer-template.html` — base obrigatória para novos objetos (não editar; copiar)
+- `src/objetos/<nome-kebab>.html` — cada objeto vive aqui, autossuficiente
+- `src/exports/` — convenção (manual) para arquivos exportados; não é alvo automático do download
 - `flow/` — documentação de fluxos (ver seção final)
 - `AGENTS.md` — duplicata de `CLAUDE.md` para outras ferramentas; manter sincronizado
 
@@ -25,7 +25,7 @@ Não há scripts. Para validar mudanças: abrir `index.html` no navegador (ou um
 
 ## Convenções
 
-- **Salvar objetos em `objetos/<nome-kebab>.html`** — `index.html` lista a partir do array `OBJECTS`; não há auto-discovery
+- **Salvar objetos em `src/objetos/<nome-kebab>.html`** — `index.html` lista a partir do array `OBJECTS`; não há auto-discovery
 - **Registrar todo objeto novo no array `OBJECTS` de `index.html`** (`file`, `name`, `desc`, `icon`, `tags`) — sem isso o card não aparece
 - **Trocar `OBJECT_NAME` no novo viewer** (linha ~433 do template) — define o nome de todos os exports (`.glb/.obj/.stl/.png`); padrão `'objeto'` causa colisão
 - **`buildGeometry()` sempre faz dispose antes de recriar** — `mesh.geometry.dispose()` + `scene.remove(mesh)` antes de instanciar nova `Mesh`; senão vaza memória GPU em sliders rápidos
@@ -45,7 +45,7 @@ Não há scripts. Para validar mudanças: abrir `index.html` no navegador (ou um
 
 ## Não fazer
 
-- Não salvar objetos na raiz ou fora de `objetos/` — quebra a expectativa do `index.html`
+- Não salvar objetos fora de `src/objetos/` — quebra a expectativa do `index.html`
 - Não esquecer de registrar no array `OBJECTS` — o arquivo funciona standalone, mas não aparece na galeria
 - Não compartilhar CSS/JS entre objetos via arquivos externos — cada HTML é autônomo por design
 - Não trocar a paleta nem a fonte em objetos individuais — coesão visual do workspace depende disso
