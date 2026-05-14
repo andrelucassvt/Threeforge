@@ -1,0 +1,385 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>ThreeJS Objetos — Galeria</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:ital,wght@0,400;0,500;1,400&display=swap" rel="stylesheet" />
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg:      #0d0d0d;
+    --surface: #111;
+    --border:  #1e1e1e;
+    --accent:  #00ff88;
+    --text:    #eee;
+    --muted:   #555;
+    --dim:     #333;
+  }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'DM Mono', monospace;
+    min-height: 100vh;
+  }
+
+  /* ── HEADER ── */
+  header {
+    padding: 32px 40px 24px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: 16px;
+    flex-wrap: wrap;
+  }
+  .logo {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+  .logo-tag {
+    font-size: 9px;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+  .logo-title {
+    font-size: 22px;
+    color: var(--accent);
+    font-weight: 500;
+  }
+  .logo-sub {
+    font-size: 11px;
+    color: var(--muted);
+    font-style: italic;
+  }
+  .stats {
+    display: flex;
+    gap: 24px;
+  }
+  .stat { text-align: right; }
+  .stat-value { font-size: 22px; color: var(--accent); font-weight: 500; }
+  .stat-label { font-size: 10px; color: var(--muted); }
+
+  /* ── SEARCH / FILTER ── */
+  .toolbar {
+    padding: 20px 40px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
+    border-bottom: 1px solid var(--border);
+  }
+  .search-wrap {
+    flex: 1;
+    min-width: 200px;
+    position: relative;
+  }
+  .search-wrap input {
+    width: 100%;
+    background: var(--surface);
+    border: 1px solid var(--dim);
+    color: var(--text);
+    font-family: inherit;
+    font-size: 12px;
+    padding: 8px 12px 8px 32px;
+    border-radius: 6px;
+    outline: none;
+    transition: border-color 0.15s;
+  }
+  .search-wrap input:focus { border-color: var(--accent); }
+  .search-wrap::before {
+    content: '⌕';
+    position: absolute;
+    left: 10px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--muted);
+    font-size: 14px;
+    pointer-events: none;
+  }
+  .tags {
+    display: flex;
+    gap: 6px;
+    flex-wrap: wrap;
+  }
+  .tag-btn {
+    background: var(--surface);
+    border: 1px solid var(--dim);
+    color: var(--muted);
+    font-family: inherit;
+    font-size: 10px;
+    padding: 5px 10px;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: all 0.15s;
+    text-transform: lowercase;
+    letter-spacing: 0.05em;
+  }
+  .tag-btn:hover, .tag-btn.active {
+    border-color: var(--accent);
+    color: var(--accent);
+    background: #0d2018;
+  }
+
+  /* ── GRID ── */
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 1px;
+    background: var(--border);
+    border-top: 1px solid var(--border);
+  }
+
+  /* ── CARD ── */
+  .card {
+    background: var(--bg);
+    display: flex;
+    flex-direction: column;
+    transition: background 0.15s;
+    text-decoration: none;
+    color: inherit;
+    cursor: pointer;
+    position: relative;
+  }
+  .card:hover { background: #0f0f0f; }
+  .card:hover .card-arrow { opacity: 1; transform: translate(2px, -2px); }
+
+  .card-preview {
+    height: 180px;
+    background: #161616;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 48px;
+    border-bottom: 1px solid var(--border);
+    position: relative;
+    overflow: hidden;
+  }
+  .card-preview-label {
+    position: absolute;
+    bottom: 8px;
+    right: 10px;
+    font-size: 9px;
+    color: var(--muted);
+    letter-spacing: 0.1em;
+  }
+
+  .card-body { padding: 16px; flex: 1; display: flex; flex-direction: column; gap: 8px; }
+  .card-name { font-size: 13px; font-weight: 500; color: var(--text); }
+  .card-desc { font-size: 11px; color: var(--muted); line-height: 1.5; flex: 1; }
+  .card-tags { display: flex; gap: 6px; flex-wrap: wrap; }
+  .card-tag {
+    font-size: 9px;
+    padding: 2px 7px;
+    border: 1px solid var(--dim);
+    border-radius: 3px;
+    color: var(--muted);
+    letter-spacing: 0.05em;
+  }
+  .card-footer {
+    padding: 10px 16px;
+    border-top: 1px solid var(--border);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 10px;
+    color: var(--muted);
+  }
+  .card-open {
+    font-size: 10px;
+    color: var(--accent);
+    letter-spacing: 0.05em;
+    border: 1px solid var(--accent);
+    padding: 4px 10px;
+    border-radius: 4px;
+    transition: all 0.15s;
+  }
+  .card:hover .card-open { background: var(--accent); color: #000; }
+
+  .card-arrow {
+    position: absolute;
+    top: 12px;
+    right: 14px;
+    color: var(--accent);
+    font-size: 16px;
+    opacity: 0;
+    transition: all 0.15s;
+  }
+
+  /* ── EMPTY STATE ── */
+  .empty {
+    grid-column: 1 / -1;
+    padding: 80px 40px;
+    text-align: center;
+    display: none;
+  }
+  .empty-icon { font-size: 40px; margin-bottom: 16px; color: var(--dim); }
+  .empty-text { font-size: 13px; color: var(--muted); }
+
+  /* ── FOOTER ── */
+  footer {
+    padding: 20px 40px;
+    border-top: 1px solid var(--border);
+    font-size: 10px;
+    color: var(--muted);
+    display: flex;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">
+    <span class="logo-tag">workspace</span>
+    <span class="logo-title">ThreeJS Objetos</span>
+    <span class="logo-sub">objetos 3D parametrizados · GLB · OBJ · STL · PNG</span>
+  </div>
+  <div class="stats">
+    <div class="stat">
+      <div class="stat-value" id="total-count">0</div>
+      <div class="stat-label">objetos</div>
+    </div>
+  </div>
+</header>
+
+<div class="toolbar">
+  <div class="search-wrap">
+    <input type="text" id="search" placeholder="Buscar objeto..." oninput="filter()" />
+  </div>
+  <div class="tags" id="tag-list"></div>
+</div>
+
+<div class="grid" id="grid">
+  <div class="empty" id="empty">
+    <div class="empty-icon">◻</div>
+    <div class="empty-text">Nenhum objeto encontrado.<br/>Peça à IA para criar um novo objeto em <code>objetos/</code>.</div>
+  </div>
+</div>
+
+<footer>
+  <span>ThreeJS Objetos — Workspace</span>
+  <span>Abra cada arquivo .html no navegador para visualizar e exportar</span>
+</footer>
+
+<script>
+// ─────────────────────────────────────────────────────────────────
+// LISTA DE OBJETOS
+// A IA deve adicionar um item aqui sempre que criar um novo objeto.
+// ─────────────────────────────────────────────────────────────────
+const OBJECTS = [
+  // Exemplo (remova quando tiver objetos reais):
+  // {
+  //   file: 'objetos/cubo-chanfrado.html',
+  //   name: 'Cubo Chanfrado',
+  //   desc: 'Cubo com arestas chanfradas, controles de tamanho e raio do chanfro.',
+  //   icon: '⬛',
+  //   tags: ['básico', 'geométrico'],
+  // },
+];
+
+// ─────────────────────────────────────────────────────────────────
+// RENDER
+// ─────────────────────────────────────────────────────────────────
+let activeTag = null;
+
+function render(items) {
+  const grid  = document.getElementById('grid');
+  const empty = document.getElementById('empty');
+
+  // remove cards existentes (mantém o empty)
+  grid.querySelectorAll('.card').forEach(c => c.remove());
+
+  if (items.length === 0) {
+    empty.style.display = 'block';
+    return;
+  }
+  empty.style.display = 'none';
+
+  items.forEach(obj => {
+    const card = document.createElement('a');
+    card.className = 'card';
+    card.href = obj.file;
+    card.target = '_blank';
+
+    const tagsHtml = (obj.tags || [])
+      .map(t => `<span class="card-tag">${t}</span>`).join('');
+
+    card.innerHTML = `
+      <span class="card-arrow">↗</span>
+      <div class="card-preview">
+        <span>${obj.icon || '◻'}</span>
+        <span class="card-preview-label">THREE.JS</span>
+      </div>
+      <div class="card-body">
+        <div class="card-name">${obj.name}</div>
+        <div class="card-desc">${obj.desc || ''}</div>
+        <div class="card-tags">${tagsHtml}</div>
+      </div>
+      <div class="card-footer">
+        <span>${obj.file.replace('objetos/', '')}</span>
+        <span class="card-open">Abrir →</span>
+      </div>
+    `;
+    grid.appendChild(card);
+  });
+}
+
+function filter() {
+  const q = document.getElementById('search').value.toLowerCase().trim();
+  let items = OBJECTS;
+
+  if (activeTag) {
+    items = items.filter(o => (o.tags || []).includes(activeTag));
+  }
+  if (q) {
+    items = items.filter(o =>
+      o.name.toLowerCase().includes(q) ||
+      (o.desc || '').toLowerCase().includes(q) ||
+      (o.tags || []).some(t => t.includes(q))
+    );
+  }
+  render(items);
+}
+
+function buildTags() {
+  const all   = new Set(OBJECTS.flatMap(o => o.tags || []));
+  const wrap  = document.getElementById('tag-list');
+  all.forEach(tag => {
+    const btn = document.createElement('button');
+    btn.className = 'tag-btn';
+    btn.textContent = tag;
+    btn.onclick = () => {
+      if (activeTag === tag) {
+        activeTag = null;
+        btn.classList.remove('active');
+      } else {
+        activeTag = tag;
+        wrap.querySelectorAll('.tag-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+      }
+      filter();
+    };
+    wrap.appendChild(btn);
+  });
+}
+
+// INIT
+document.getElementById('total-count').textContent = OBJECTS.length;
+
+if (OBJECTS.length === 0) {
+  document.getElementById('empty').style.display = 'block';
+} else {
+  buildTags();
+  render(OBJECTS);
+}
+</script>
+
+</body>
+</html>
