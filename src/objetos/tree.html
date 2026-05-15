@@ -1,0 +1,619 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Tree — ThreeJS Viewer</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&display=swap" rel="stylesheet" />
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: #0a0a0a;
+    color: #f0f0f0;
+    font-family: 'DM Mono', monospace;
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+    overflow: hidden;
+  }
+
+  /* ── HEADER ── */
+  header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 24px;
+    background: #111113;
+    border-bottom: 1px solid rgba(255,255,255,0.07);
+    flex-shrink: 0;
+  }
+  header h1 { font-size: 13px; color: #f0f0f0; letter-spacing: 0.06em; font-weight: 500; }
+  header .actions { display: flex; gap: 8px; }
+  header button {
+    background: rgba(255,255,255,0.06);
+    border: 1px solid rgba(255,255,255,0.1);
+    color: #6e6e73;
+    padding: 5px 14px;
+    font-family: inherit;
+    font-size: 11px;
+    cursor: pointer;
+    border-radius: 8px;
+    transition: all 0.2s;
+  }
+  header button:hover {
+    background: rgba(255,255,255,0.1);
+    color: #f0f0f0;
+    border-color: rgba(255,255,255,0.2);
+  }
+
+  /* ── MAIN LAYOUT ── */
+  main {
+    display: flex;
+    flex: 1;
+    overflow: hidden;
+  }
+
+  /* ── VIEWER ── */
+  #viewer {
+    flex: 1;
+    position: relative;
+    background: #111113;
+  }
+  #viewer canvas {
+    display: block;
+    width: 100% !important;
+    height: 100% !important;
+  }
+  #viewer-hint {
+    position: absolute;
+    bottom: 16px;
+    left: 50%;
+    transform: translateX(-50%);
+    font-size: 10px;
+    color: #3d3d40;
+    pointer-events: none;
+    white-space: nowrap;
+  }
+
+  /* ── PANEL ── */
+  aside {
+    width: 272px;
+    flex-shrink: 0;
+    background: #111113;
+    border-left: 1px solid rgba(255,255,255,0.07);
+    display: flex;
+    flex-direction: column;
+    overflow-y: auto;
+  }
+
+  .section {
+    padding: 20px 18px;
+    border-bottom: 1px solid rgba(255,255,255,0.05);
+  }
+  .section-title {
+    font-size: 8px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: #3d3d40;
+    margin-bottom: 16px;
+  }
+
+  /* sliders */
+  .param-row { margin-bottom: 16px; }
+  .param-label {
+    display: flex;
+    justify-content: space-between;
+    font-size: 11px;
+    color: #6e6e73;
+    margin-bottom: 7px;
+  }
+  .param-label span { color: #f0f0f0; }
+  input[type="range"] {
+    width: 100%;
+    accent-color: #00ff88;
+    cursor: pointer;
+  }
+
+  /* select */
+  .param-select {
+    width: 100%;
+    background: rgba(255,255,255,0.05);
+    border: 1px solid rgba(255,255,255,0.1);
+    color: #f0f0f0;
+    font-family: inherit;
+    font-size: 11px;
+    padding: 7px 10px;
+    border-radius: 8px;
+    cursor: pointer;
+    margin-top: 4px;
+  }
+
+  /* color */
+  .color-row { display: flex; align-items: center; gap: 10px; font-size: 11px; color: #6e6e73; }
+  input[type="color"] { width: 36px; height: 26px; border: none; background: none; cursor: pointer; border-radius: 4px; }
+
+  /* export buttons */
+  .export-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+  }
+  .btn-export {
+    background: rgba(255,255,255,0.05);
+    border: 1px solid rgba(255,255,255,0.1);
+    color: #6e6e73;
+    font-family: inherit;
+    font-size: 11px;
+    padding: 9px 4px;
+    border-radius: 8px;
+    cursor: pointer;
+    text-align: center;
+    transition: all 0.2s;
+  }
+  .btn-export:hover {
+    background: rgba(255,255,255,0.09);
+    color: #f0f0f0;
+    border-color: rgba(255,255,255,0.18);
+  }
+  .btn-export.primary {
+    grid-column: span 2;
+    border-color: rgba(0,255,136,0.3);
+    color: #00ff88;
+    background: rgba(0,255,136,0.05);
+  }
+  .btn-export.primary:hover {
+    background: rgba(0,255,136,0.1);
+    border-color: rgba(0,255,136,0.5);
+  }
+
+  /* info */
+  .info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  .info-item { font-size: 10px; color: #3d3d40; }
+  .info-item strong { display: block; color: #6e6e73; font-size: 11px; margin-bottom: 2px; }
+</style>
+
+<!-- Three.js via importmap -->
+<script type="importmap">
+{
+  "imports": {
+    "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+    "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
+  }
+}
+</script>
+</head>
+<body>
+
+<header>
+  <h1>TREE</h1>
+  <div class="actions">
+    <button onclick="resetParams()">↺ Reset</button>
+    <button onclick="toggleWireframe()">⬡ Wire</button>
+  </div>
+</header>
+
+<main>
+  <!-- ── VIEWER ── -->
+  <div id="viewer">
+    <canvas id="c"></canvas>
+    <div id="viewer-hint">Clique e arraste para orbitar · Scroll para zoom · Botão do meio para pan</div>
+  </div>
+
+  <!-- ── PANEL ── -->
+  <aside>
+
+    <!-- PARÂMETROS -->
+    <div class="section">
+      <div class="section-title">Parâmetros</div>
+
+      <div class="param-row">
+        <div class="param-label">Trunk height <span id="val-trunkHeight">2.4</span></div>
+        <input type="range" id="sl-trunkHeight" min="0.8" max="5" step="0.1" value="2.4"
+               oninput="updateParam('trunkHeight', this.value)" />
+      </div>
+
+      <div class="param-row">
+        <div class="param-label">Trunk radius <span id="val-trunkRadius">0.25</span></div>
+        <input type="range" id="sl-trunkRadius" min="0.1" max="0.8" step="0.05" value="0.25"
+               oninput="updateParam('trunkRadius', this.value)" />
+      </div>
+
+      <div class="param-row">
+        <div class="param-label">Canopy radius <span id="val-canopyRadius">1.35</span></div>
+        <input type="range" id="sl-canopyRadius" min="0.5" max="3.5" step="0.1" value="1.35"
+               oninput="updateParam('canopyRadius', this.value)" />
+      </div>
+
+      <div class="param-row">
+        <div class="param-label">Canopy height <span id="val-canopyHeight">2.8</span></div>
+        <input type="range" id="sl-canopyHeight" min="1" max="5" step="0.1" value="2.8"
+               oninput="updateParam('canopyHeight', this.value)" />
+      </div>
+
+      <div class="param-row">
+        <div class="param-label">Foliage tiers <span id="val-tiers">4</span></div>
+        <input type="range" id="sl-tiers" min="1" max="7" step="1" value="4"
+               oninput="updateParam('tiers', this.value)" />
+      </div>
+
+      <div class="param-row">
+        <div class="param-label">Branch spread <span id="val-branchSpread">0.8</span></div>
+        <input type="range" id="sl-branchSpread" min="0" max="1.5" step="0.1" value="0.8"
+               oninput="updateParam('branchSpread', this.value)" />
+      </div>
+    </div>
+
+    <!-- MATERIAL -->
+    <div class="section">
+      <div class="section-title">Material</div>
+
+      <div class="param-row">
+        <div class="color-row">
+          Canopy color
+          <input type="color" id="cl-color" value="#1fa463" oninput="updateColor(this.value)" />
+        </div>
+      </div>
+
+      <div class="param-row">
+        <div class="param-label">Rugosidade <span id="val-roughness">0.75</span></div>
+        <input type="range" id="sl-roughness" min="0" max="1" step="0.01" value="0.75"
+               oninput="updateMaterial('roughness', this.value)" />
+      </div>
+
+      <div class="param-row">
+        <div class="param-label">Metalicidade <span id="val-metalness">0.00</span></div>
+        <input type="range" id="sl-metalness" min="0" max="1" step="0.01" value="0"
+               oninput="updateMaterial('metalness', this.value)" />
+      </div>
+    </div>
+
+    <!-- CENA -->
+    <div class="section">
+      <div class="section-title">Cena</div>
+
+      <div class="param-row">
+        <div class="param-label">Fundo</div>
+        <select class="param-select" onchange="setBackground(this.value)">
+          <option value="#1a1a1a">Escuro (padrão)</option>
+          <option value="#ffffff">Branco</option>
+          <option value="#0a0a1a">Azul noite</option>
+          <option value="transparent">Transparente</option>
+        </select>
+      </div>
+    </div>
+
+    <!-- EXPORTAR -->
+    <div class="section">
+      <div class="section-title">Exportar</div>
+      <div class="export-grid">
+        <button class="btn-export primary" onclick="exportGLB()">↓ GLB</button>
+        <button class="btn-export" onclick="exportOBJ()">↓ OBJ</button>
+        <button class="btn-export" onclick="exportSTL()">↓ STL</button>
+        <button class="btn-export" onclick="exportPNG(1)">↓ PNG 1×</button>
+        <button class="btn-export" onclick="exportPNG(2)">↓ PNG 2×</button>
+        <button class="btn-export" onclick="exportPNG(4)">↓ PNG 4×</button>
+      </div>
+    </div>
+
+    <!-- INFO -->
+    <div class="section">
+      <div class="section-title">Info</div>
+      <div class="info-grid">
+        <div class="info-item"><strong id="info-verts">—</strong>vértices</div>
+        <div class="info-item"><strong id="info-tris">—</strong>triângulos</div>
+      </div>
+    </div>
+
+  </aside>
+</main>
+
+<script type="module">
+import * as THREE from 'three';
+import { OrbitControls }  from 'three/addons/controls/OrbitControls.js';
+import { GLTFExporter }   from 'three/addons/exporters/GLTFExporter.js';
+import { OBJExporter }    from 'three/addons/exporters/OBJExporter.js';
+import { STLExporter }    from 'three/addons/exporters/STLExporter.js';
+
+// ─────────────────────────────────────────────
+// PARÂMETROS (edite aqui)
+// ─────────────────────────────────────────────
+const PARAMS = {
+  trunkHeight:  2.4,
+  trunkRadius:  0.25,
+  canopyRadius: 1.35,
+  canopyHeight: 2.8,
+  tiers:        4,
+  branchSpread: 0.8,
+  roughness:    0.75,
+  metalness:    0.0,
+  color:        0x1fa463,
+};
+
+// ─────────────────────────────────────────────
+// SCENE SETUP
+// ─────────────────────────────────────────────
+const canvas   = document.getElementById('c');
+const renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
+renderer.setPixelRatio(window.devicePixelRatio);
+renderer.shadowMap.enabled = true;
+renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+renderer.setClearColor(0x1a1a1a);
+
+const scene  = new THREE.Scene();
+const camera = new THREE.PerspectiveCamera(45, 1, 0.01, 1000);
+camera.position.set(5, 4, 7);
+
+const controls = new OrbitControls(camera, renderer.domElement);
+controls.enableDamping = true;
+controls.dampingFactor = 0.06;
+controls.target.set(0, 2.3, 0);
+
+// Iluminação
+const ambient = new THREE.AmbientLight(0xffffff, 0.4);
+scene.add(ambient);
+
+const dirLight = new THREE.DirectionalLight(0xffffff, 1.2);
+dirLight.position.set(5, 10, 7);
+dirLight.castShadow = true;
+dirLight.shadow.mapSize.set(2048, 2048);
+scene.add(dirLight);
+
+const fill = new THREE.DirectionalLight(0x8888ff, 0.3);
+fill.position.set(-5, -2, -5);
+scene.add(fill);
+
+// Grid
+const grid = new THREE.GridHelper(20, 20, 0x333333, 0x222222);
+scene.add(grid);
+
+// Plano de sombra
+const shadowPlane = new THREE.Mesh(
+  new THREE.PlaneGeometry(40, 40),
+  new THREE.ShadowMaterial({ opacity: 0.25 })
+);
+shadowPlane.rotation.x = -Math.PI / 2;
+shadowPlane.receiveShadow = true;
+scene.add(shadowPlane);
+
+// ─────────────────────────────────────────────
+// OBJETO (edite buildGeometry para seu objeto)
+// ─────────────────────────────────────────────
+let mesh;
+const material = new THREE.MeshStandardMaterial({
+  color:     PARAMS.color,
+  roughness: PARAMS.roughness,
+  metalness: PARAMS.metalness,
+  flatShading: true,
+});
+const trunkMaterial = new THREE.MeshStandardMaterial({
+  color:     0x7a4a27,
+  roughness: 0.82,
+  metalness: 0.0,
+  flatShading: true,
+});
+
+function disposeObject(object) {
+  object.traverse((child) => {
+    if (child.isMesh && child.geometry) {
+      child.geometry.dispose();
+    }
+  });
+}
+
+function addBranch(group, angle, y, length, radius) {
+  if (length <= 0.05) return;
+  const geo = new THREE.CylinderGeometry(radius * 0.35, radius, length, 10, 1);
+  const branch = new THREE.Mesh(geo, trunkMaterial);
+  const dir = new THREE.Vector3(
+    Math.cos(angle) * 0.75,
+    0.42,
+    Math.sin(angle) * 0.75
+  ).normalize();
+  branch.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), dir);
+  branch.position.copy(new THREE.Vector3(0, y, 0).add(dir.multiplyScalar(length / 2)));
+  branch.castShadow = true;
+  branch.receiveShadow = true;
+  group.add(branch);
+}
+
+function formatParam(key, val) {
+  if (key === 'tiers') return Math.round(val).toString();
+  if (key === 'trunkRadius' || key === 'canopyRadius') return Number(val).toFixed(2);
+  return Number(val).toFixed(1);
+}
+
+function buildGeometry() {
+  if (mesh) {
+    disposeObject(mesh);
+    scene.remove(mesh);
+  }
+
+  const tiers = Math.max(1, Math.round(PARAMS.tiers));
+  const group = new THREE.Group();
+  group.name = 'Tree';
+
+  const trunkGeo = new THREE.CylinderGeometry(
+    PARAMS.trunkRadius * 0.72,
+    PARAMS.trunkRadius,
+    PARAMS.trunkHeight,
+    18,
+    1
+  );
+  const trunk = new THREE.Mesh(trunkGeo, trunkMaterial);
+  trunk.position.y = PARAMS.trunkHeight / 2;
+  trunk.castShadow = true;
+  trunk.receiveShadow = true;
+  group.add(trunk);
+
+  const branchCount = Math.max(3, tiers * 3);
+  for (let i = 0; i < branchCount; i++) {
+    const phase = i / branchCount;
+    const y = PARAMS.trunkHeight * (0.35 + phase * 0.5);
+    const length = PARAMS.canopyRadius * PARAMS.branchSpread * (0.45 + phase * 0.35);
+    addBranch(group, i * 2.399963, y, length, PARAMS.trunkRadius * 0.36);
+  }
+
+  const tierStep = PARAMS.canopyHeight / tiers;
+  for (let i = 0; i < tiers; i++) {
+    const t = tiers === 1 ? 0 : i / (tiers - 1);
+    const radius = PARAMS.canopyRadius * (1 - t * 0.34);
+    const height = tierStep * 1.45;
+    const geo = new THREE.ConeGeometry(radius, height, 36, 1, false);
+    const foliage = new THREE.Mesh(geo, material);
+    foliage.position.y = PARAMS.trunkHeight + tierStep * (i + 0.5);
+    foliage.rotation.y = i * 0.38;
+    foliage.castShadow = true;
+    foliage.receiveShadow = true;
+    group.add(foliage);
+  }
+
+  mesh = group;
+  scene.add(mesh);
+
+  updateInfo();
+}
+
+function updateInfo() {
+  if (!mesh) return;
+  let verts = 0;
+  let tris = 0;
+  mesh.traverse((child) => {
+    if (!child.isMesh || !child.geometry) return;
+    const pos = child.geometry.attributes.position;
+    if (!pos) return;
+    verts += pos.count;
+    tris += child.geometry.index ? child.geometry.index.count / 3 : pos.count / 3;
+  });
+  document.getElementById('info-verts').textContent = verts;
+  document.getElementById('info-tris').textContent  = Math.floor(tris);
+}
+
+// ─────────────────────────────────────────────
+// CONTROLES UI (expostos ao window)
+// ─────────────────────────────────────────────
+window.updateParam = (key, val) => {
+  const next = key === 'tiers' ? Math.round(parseFloat(val)) : parseFloat(val);
+  PARAMS[key] = next;
+  document.getElementById(`val-${key}`).textContent = formatParam(key, next);
+  buildGeometry();
+};
+
+window.updateMaterial = (key, val) => {
+  PARAMS[key] = parseFloat(val);
+  material[key] = parseFloat(val);
+  trunkMaterial[key] = key === 'metalness' ? Math.min(parseFloat(val), 0.2) : parseFloat(val);
+  document.getElementById(`val-${key}`).textContent = parseFloat(val).toFixed(2);
+};
+
+window.updateColor = (hex) => {
+  PARAMS.color = new THREE.Color(hex).getHex();
+  material.color.set(hex);
+};
+
+window.setBackground = (color) => {
+  if (color === 'transparent') {
+    renderer.setClearAlpha(0);
+    renderer.setClearColor(0x000000, 0);
+  } else {
+    renderer.setClearAlpha(1);
+    renderer.setClearColor(color);
+  }
+};
+
+window.toggleWireframe = () => {
+  material.wireframe = !material.wireframe;
+  trunkMaterial.wireframe = material.wireframe;
+};
+
+window.resetParams = () => {
+  PARAMS.trunkHeight = 2.4;
+  PARAMS.trunkRadius = 0.25;
+  PARAMS.canopyRadius = 1.35;
+  PARAMS.canopyHeight = 2.8;
+  PARAMS.tiers = 4;
+  PARAMS.branchSpread = 0.8;
+  document.getElementById('sl-trunkHeight').value = 2.4;
+  document.getElementById('sl-trunkRadius').value = 0.25;
+  document.getElementById('sl-canopyRadius').value = 1.35;
+  document.getElementById('sl-canopyHeight').value = 2.8;
+  document.getElementById('sl-tiers').value = 4;
+  document.getElementById('sl-branchSpread').value = 0.8;
+  document.getElementById('val-trunkHeight').textContent = '2.4';
+  document.getElementById('val-trunkRadius').textContent = '0.25';
+  document.getElementById('val-canopyRadius').textContent = '1.35';
+  document.getElementById('val-canopyHeight').textContent = '2.8';
+  document.getElementById('val-tiers').textContent = '4';
+  document.getElementById('val-branchSpread').textContent = '0.8';
+  buildGeometry();
+};
+
+// ─────────────────────────────────────────────
+// EXPORTADORES
+// ─────────────────────────────────────────────
+function downloadBlob(blob, filename) {
+  const url = URL.createObjectURL(blob);
+  const a   = document.createElement('a');
+  a.href = url; a.download = filename; a.click();
+  URL.revokeObjectURL(url);
+}
+
+const OBJECT_NAME = 'tree';
+
+window.exportGLB = () => {
+  new GLTFExporter().parse(mesh, (buf) => {
+    downloadBlob(new Blob([buf], { type: 'application/octet-stream' }), `${OBJECT_NAME}.glb`);
+  }, (err) => console.error(err), { binary: true });
+};
+
+window.exportOBJ = () => {
+  const result = new OBJExporter().parse(mesh);
+  downloadBlob(new Blob([result], { type: 'text/plain' }), `${OBJECT_NAME}.obj`);
+};
+
+window.exportSTL = () => {
+  const result = new STLExporter().parse(mesh, { binary: true });
+  downloadBlob(new Blob([result], { type: 'application/octet-stream' }), `${OBJECT_NAME}.stl`);
+};
+
+window.exportPNG = (scale = 1) => {
+  const w = renderer.domElement.width  * scale;
+  const h = renderer.domElement.height * scale;
+  renderer.setSize(w, h);
+  renderer.render(scene, camera);
+  renderer.domElement.toBlob((blob) => {
+    downloadBlob(blob, `${OBJECT_NAME}-${scale}x.png`);
+    // restaura tamanho
+    onResize();
+  }, 'image/png');
+};
+
+// ─────────────────────────────────────────────
+// RESIZE
+// ─────────────────────────────────────────────
+const viewerEl = document.getElementById('viewer');
+function onResize() {
+  const w = viewerEl.clientWidth;
+  const h = viewerEl.clientHeight;
+  renderer.setSize(w, h, false);
+  camera.aspect = w / h;
+  camera.updateProjectionMatrix();
+}
+new ResizeObserver(onResize).observe(viewerEl);
+onResize();
+
+// ─────────────────────────────────────────────
+// LOOP
+// ─────────────────────────────────────────────
+function animate() {
+  requestAnimationFrame(animate);
+  controls.update();
+  renderer.render(scene, camera);
+}
+
+// INIT
+buildGeometry();
+animate();
+</script>
+</body>
+</html>

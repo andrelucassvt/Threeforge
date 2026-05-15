@@ -8,7 +8,7 @@ O usuário abre `index.html` no navegador. A página renderiza um header com con
 
 No `init`, o script atualiza o contador total, monta dinamicamente os botões de tag a partir de todas as tags únicas e chama `render(OBJECTS)` para criar os cards. Cada card é um `<a target="_blank">` apontando para `objetos/<nome>.html` — clicar abre o viewer correspondente em uma aba nova, sem navegação client-side, sem router. A galeria não conhece o conteúdo dos viewers; apenas lista links.
 
-A busca (`oninput` no campo) e o filtro de tags (`onclick` em cada `.tag-btn`) chamam `filter()`, que reaplica os critérios sobre o array em memória e re-renderiza o grid. Quando `OBJECTS` está vazio (estado atual do projeto), um placeholder `.empty` é exibido.
+A busca (`oninput` no campo) e o filtro de tags (`onclick` em cada `.tag-btn`) chamam `filter()`, que reaplica os critérios sobre o array em memória e re-renderiza o grid. Quando `OBJECTS` está vazio ou quando o filtro não encontra resultados, um placeholder `.empty` é exibido.
 
 ## Passo a Passo
 
@@ -24,7 +24,7 @@ A busca (`oninput` no campo) e o filtro de tags (`onclick` em cada `.tag-btn`) c
 
 ### Caminhos alternativos
 
-- **Galeria vazia:** `OBJECTS.length === 0` exibe `.empty` com mensagem "Nenhum objeto encontrado". É o estado atual do projeto.
+- **Galeria vazia:** `OBJECTS.length === 0` exibe `.empty` com mensagem "Nenhum objeto encontrado". O mesmo placeholder também aparece quando a busca/filtro não encontra resultados.
 - **Busca sem resultado:** `filter()` retorna lista vazia → `render([])` reexibe `.empty` (linha 299–303).
 - **Tag clicada duas vezes:** o handler em `buildTags` desativa a tag (`activeTag = null`) e remove a classe `.active` (linhas 359–367).
 

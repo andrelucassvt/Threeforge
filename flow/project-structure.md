@@ -1,6 +1,6 @@
 # Estrutura do Projeto: Threeforge
 
-> **Resumo:** Workspace estático (HTML/JS) para criação, visualização e exportação de objetos 3D parametrizados em Three.js. Cada objeto é um arquivo HTML standalone com viewer, painel de parâmetros e exportadores (GLB/OBJ/STL/PNG); o `index.html` na raiz é uma galeria que lista todos os objetos da pasta `objetos/`.
+> **Resumo:** Workspace estático (HTML/JS) para criação, visualização e exportação de objetos 3D parametrizados em Three.js. Cada objeto é um arquivo HTML standalone com viewer, painel de parâmetros e exportadores (GLB/OBJ/STL/PNG); o `index.html` na raiz é uma galeria que lista manualmente os objetos em `src/objetos/`.
 
 ## Stack e Tecnologias
 
@@ -39,13 +39,13 @@ src/objetos/<nome>.html (viewer standalone)
 
 ## Features
 
-> **Nota:** A pasta `objetos/` está atualmente **vazia**. As "features" abaixo são as funcionalidades estruturais do workspace, não objetos 3D específicos. Quando objetos forem criados, cada um será listado aqui.
+> **Nota:** As "features" abaixo são as funcionalidades estruturais do workspace. Os viewers existentes ficam em `src/objetos/` e só aparecem na galeria quando também são cadastrados no array `OBJECTS`.
 
 | Feature | Caminho principal | Descrição resumida |
 |---------|------------------|-------------------|
 | Galeria de objetos | `index.html` | Página inicial; lista objetos a partir do array `OBJECTS`, com busca e filtro por tags |
 | Template de viewer | `src/_template/viewer-template.html` | Base copiada para criar novos objetos — já contém scene, sliders, exportadores e material |
-| Objetos 3D | `src/objetos/*.html` | Cada arquivo é um viewer parametrizado de um objeto específico |
+| Objetos 3D | `src/objetos/*.html` | Cada arquivo é um viewer parametrizado de um objeto específico, como `cubo.html`, `bolha-de-sabao.html`, `detetive-homens-de-preto.html` e `tree.html` |
 | Exportações | `src/exports/` | Diretório-alvo sugerido para arquivos exportados pelos viewers |
 
 ## Camadas / Módulos Compartilhados
@@ -83,7 +83,7 @@ Não há código compartilhado entre arquivos — cada HTML é autossuficiente p
 
 ## Observações
 
-- **Estado inicial.** Commit inicial do repositório (`8679c42`); `objetos/` e `exports/` ainda não têm conteúdo. O primeiro objeto criado vai exercitar todo o fluxo galeria → viewer → exportação.
+- **Objetos cadastrados manualmente.** A galeria não faz auto-discovery; cada novo viewer em `src/objetos/` precisa ser adicionado ao array `OBJECTS` em `index.html`.
 - **`AGENTS.md` e `CLAUDE.md` são idênticos.** Mesmo conteúdo (8206 bytes cada), provavelmente mantidos em paralelo para suportar diferentes ferramentas/agents. Se editar um, sincronize o outro.
 - **README descreve uma pasta `_lib/` que não existe.** `CLAUDE.md` menciona "libs locais (opcional, fallback offline)" em `_lib/`, mas a pasta não foi criada. Hoje, sem internet, os viewers quebram (CDN não responde).
 - **`exports/` é convenção, não enforcement.** Os exportadores fazem download via `<a download="...">` — o navegador salva em `~/Downloads` por padrão; mover para `exports/` é manual.
